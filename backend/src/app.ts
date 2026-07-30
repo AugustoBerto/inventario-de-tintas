@@ -4,7 +4,9 @@ import { pinoHttp } from "pino-http";
 import type { DataSource } from "typeorm";
 import { logger } from "./config/logger.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import { createDrawersRouter } from "./routes/drawers.js";
 import { createHealthRouter } from "./routes/health.js";
+import { createSamplesRouter } from "./routes/samples.js";
 import { sessionRouter } from "./routes/session.js";
 
 export const createApp = (dataSource: DataSource) => {
@@ -16,6 +18,8 @@ export const createApp = (dataSource: DataSource) => {
   app.use(express.json());
   app.use("/health", createHealthRouter(dataSource));
   app.use("/session", sessionRouter);
+  app.use("/samples", createSamplesRouter(dataSource));
+  app.use("/drawers", createDrawersRouter(dataSource));
   app.use((_req, res) => res.status(404).json({ message: "Rota não encontrada." }));
   app.use(errorHandler);
 
