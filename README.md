@@ -1,4 +1,4 @@
-# DASS Inventory
+# DASS Inventory — MVP
 
 Aplicação de inventário de amostras e padrões de cor.
 
@@ -38,3 +38,25 @@ npm test
 npm run build
 ```
 
+## Operação
+
+```bash
+# Aplicar migrations pendentes
+npm run migration:run
+
+# Gerar backup
+npm run db:backup -- /tmp/inventory.dump
+
+# Restaurar em um banco novo para validação
+npm run db:restore -- /tmp/inventory.dump inventory_restore_check
+
+# Executar o backend compilado com reinício automático
+npm run build
+pm2 start ecosystem.config.cjs
+```
+
+A restauração sobre o banco ativo é bloqueada pelo script.
+
+## Documentação
+
+- [Homologação e publicação](docs/HOMOLOGACAO_MVP.md)
