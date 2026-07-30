@@ -676,6 +676,51 @@ h1 {
   align-items: center;
 }
 
+.access-lookup {
+  width: min(100%, 520px);
+  margin-bottom: 1rem;
+}
+
+.access-lookup > label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.corporate-user-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+}
+
+.corporate-user-card span,
+.corporate-user-card strong {
+  display: block;
+}
+
+.corporate-user-card span {
+  margin-bottom: 0.25rem;
+  color: #667085;
+  font-size: 0.78rem;
+}
+
+.corporate-user-card > .p-message,
+.corporate-user-card > label {
+  grid-column: 1 / -1;
+}
+
+.corporate-user-card > label {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 240px;
+  font-weight: 600;
+}
+
 @media (max-width: 850px) {
   .app-shell {
     display: block;
@@ -793,7 +838,8 @@ h1 {
   .filters-panel,
   .settings-grid,
   .summary-grid,
-  .access-list article {
+  .access-list article,
+  .corporate-user-card {
     grid-template-columns: 1fr;
   }
 

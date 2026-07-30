@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { AxiosError } from "axios";
 import Button from "primevue/button";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
@@ -10,9 +11,11 @@ import {
   createAccessUser,
   getSettings,
   listAccessUsers,
+  lookupCorporateUser,
   updateAccessUser,
   updateSettings,
 } from "@/services/admin";
+import type { CorporateUserLookup } from "@/services/admin";
 import type { InventoryAccess, InventorySettings } from "@/types/sample";
 
 const settings = reactive<InventorySettings>({
@@ -25,10 +28,10 @@ const registrationSearch = ref("");
 const message = ref("");
 const errorMessage = ref("");
 const saving = ref(false);
+const lookingUp = ref(false);
+const corporateUser = ref<CorporateUserLookup | null>(null);
 const newUser = reactive({
-  corporateUserId: "",
   registration: "",
-  displayName: "",
   profile: "VIEWER" as InventoryAccess["profile"],
 });
 const profiles = ["ADMIN", "OPERATOR", "VIEWER"];
@@ -55,15 +58,35 @@ const addUser = async () => {
   try {
     await createAccessUser({ ...newUser });
     Object.assign(newUser, {
-      corporateUserId: "",
       registration: "",
-      displayName: "",
       profile: "VIEWER",
     });
+    corporateUser.value = null;
     await loadUsers();
     message.value = "Acesso concedido.";
   } catch {
     errorMessage.value = "Não foi possível conceder o acesso.";
+  }
+};
+
+const findCorporateUser = async () => {
+  corporateUser.value = null;
+  errorMessage.value = "";
+  if (!newUser.registration.trim()) {
+    errorMessage.value = "Informe a matrícula.";
+    return;
+  }
+  lookingUp.value = true;
+  try {
+    corporateUser.value = await lookupCorporateUser(newUser.registration.trim());
+  } catch (error) {
+    errorMessage.value =
+      error instanceof AxiosError
+        ? error.response?.data?.message ??
+          "Não foi possível consultar o Auth Service."
+        : "Não foi possível consultar o Auth Service.";
+  } finally {
+    lookingUp.value = false;
   }
 };
 
@@ -123,16 +146,44 @@ onMounted(async () => {
 
     <section class="content-card admin-section">
       <h2>Conceder acesso</h2>
-      <div class="settings-grid">
-        <label>ID corporativo <InputText v-model="newUser.corporateUserId" /></label>
-        <label>Matrícula <InputText v-model="newUser.registration" /></label>
-        <label>Nome <InputText v-model="newUser.displayName" /></label>
+      <div class="access-lookup">
+        <label>
+          Matrícula
+          <span class="search-form">
+            <InputText v-model="newUser.registration" @keydown.enter.prevent="findCorporateUser" />
+            <Button
+              label="Buscar"
+              icon="pi pi-search"
+              :loading="lookingUp"
+              @click="findCorporateUser"
+            />
+          </span>
+        </label>
+      </div>
+      <div v-if="corporateUser" class="corporate-user-card">
+        <div>
+          <span>Colaborador</span>
+          <strong>{{ corporateUser.displayName }}</strong>
+        </div>
+        <div>
+          <span>Setor</span>
+          <strong>{{ corporateUser.department || "Não informado" }}</strong>
+        </div>
+        <div>
+          <span>Função</span>
+          <strong>{{ corporateUser.function || "Não informada" }}</strong>
+        </div>
         <label>
           Perfil
           <Select v-model="newUser.profile" :options="profiles" />
         </label>
       </div>
-      <Button label="Conceder acesso" icon="pi pi-user-plus" @click="addUser" />
+      <Button
+        label="Conceder acesso"
+        icon="pi pi-user-plus"
+        :disabled="!corporateUser"
+        @click="addUser"
+      />
     </section>
 
     <section class="content-card admin-section">

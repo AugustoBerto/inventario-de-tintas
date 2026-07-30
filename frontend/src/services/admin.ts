@@ -15,11 +15,23 @@ export const listAccessUsers = async (registration = "") =>
   ).data;
 
 export const createAccessUser = async (values: {
-  corporateUserId: string;
-  registration?: string;
-  displayName: string;
+  registration: string;
   profile: InventoryAccess["profile"];
 }) => (await http.post<InventoryAccess>("/inventory/access-users", values)).data;
+
+export interface CorporateUserLookup {
+  registration: string;
+  displayName: string;
+  department: string | null;
+  function: string | null;
+}
+
+export const lookupCorporateUser = async (registration: string) =>
+  (
+    await http.get<CorporateUserLookup>(
+      `/inventory/access-users/lookup/${encodeURIComponent(registration)}`,
+    )
+  ).data;
 
 export const updateAccessUser = async (
   id: string,
