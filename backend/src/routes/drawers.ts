@@ -2,12 +2,13 @@ import { Router } from "express";
 import type { DataSource } from "typeorm";
 import { Drawer } from "../database/entities/Drawer.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { loadInventoryAccess } from "../middleware/inventory-access.js";
 import { drawerSummary } from "../services/addressing.js";
 
 export const createDrawersRouter = (dataSource: DataSource) => {
   const router = Router();
   const repository = dataSource.getRepository(Drawer);
-  router.use(authenticate);
+  router.use(authenticate, loadInventoryAccess(dataSource));
 
   router.get("/", async (_req, res, next) => {
     try {
@@ -24,7 +25,7 @@ export const createDrawersRouter = (dataSource: DataSource) => {
 
   router.get("/:id", async (req, res, next) => {
     try {
-      const drawer = await repository.findOneBy({ id: req.params.id });
+      const drawer = await repository.findOneBy({ id: String(req.params.id) });
       if (!drawer) {
         res.status(404).json({ message: "Gaveta não encontrada." });
         return;

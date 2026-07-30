@@ -1,6 +1,9 @@
 import type { EntityManager } from "typeorm";
 import { Drawer } from "../database/entities/Drawer.js";
 import { Sample } from "../database/entities/Sample.js";
+import { InventorySetting } from "../database/entities/InventorySetting.js";
+import type { AuthUser } from "../types/auth.js";
+import { recordMovement } from "./audit.js";
 
 export const drawerSummary = async (
   manager: EntityManager,
@@ -34,13 +37,38 @@ export const recommendedDrawer = async (
 export const sampleWithAddress = async (
   manager: EntityManager,
   sample: Sample,
-) => ({
-  ...sample,
-  drawer: sample.drawerId
-    ? await manager.getRepository(Drawer).findOneBy({ id: sample.drawerId })
-    : null,
-  recommendation: await recommendedDrawer(manager, sample),
-});
+  expirationAlertDays?: number,
+) => {
+  const alertDays =
+    expirationAlertDays ??
+    Number(
+      (
+        await manager
+          .getRepository(InventorySetting)
+          .findOneBy({ key: "expirationAlertDays" })
+      )?.value ?? 30,
+    );
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const alertDate = new Date(today);
+  alertDate.setUTCDate(alertDate.getUTCDate() + alertDays);
+  const expirationStatus = !sample.expiresAt
+    ? "SEM_VALIDADE"
+    : sample.expiresAt < today.toISOString().slice(0, 10)
+      ? "VENCIDA"
+      : sample.expiresAt <= alertDate.toISOString().slice(0, 10)
+        ? "PROXIMA"
+        : "VALIDA";
+
+  return {
+    ...sample,
+    drawer: sample.drawerId
+      ? await manager.getRepository(Drawer).findOneBy({ id: sample.drawerId })
+      : null,
+    recommendation: await recommendedDrawer(manager, sample),
+    expirationStatus,
+  };
+};
 
 export const refreshAddressStatus = async (
   manager: EntityManager,
@@ -66,6 +94,7 @@ export const moveSample = async (
   sampleId: string,
   drawerId: string,
   confirmDivergence: boolean,
+  actor: AuthUser,
   reason?: string,
 ) => {
   const sampleRepository = manager.getRepository(Sample);
@@ -93,6 +122,7 @@ export const moveSample = async (
     return { kind: "confirmation-required" as const, recommendation };
   }
 
+  const fromDrawerId = sample.drawerId;
   sample.drawerId = drawerId;
   sample.status = !recommendation
     ? "SEM_RECOMENDACAO"
@@ -101,6 +131,14 @@ export const moveSample = async (
       : "CORRETO";
   sample.divergenceReason = divergent ? reason?.trim() || null : null;
   await sampleRepository.save(sample);
+  await recordMovement(manager, actor, {
+    sampleId: sample.id,
+    sampleReference: sample.reference,
+    event: fromDrawerId ? "MOVED" : "ADDRESSED",
+    fromDrawerId,
+    toDrawerId: drawerId,
+    details: divergent ? { divergent: true, reason: sample.divergenceReason } : null,
+  });
   return {
     kind: "ok" as const,
     sample: await sampleWithAddress(manager, sample),
