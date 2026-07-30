@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   color: #172033;
   background: #f3f5f8;
   font-family:
@@ -12,6 +13,26 @@
   font-synthesis: none;
 }
 
+.p-inputtext,
+.p-inputnumber-input,
+.p-select,
+.p-textarea {
+  border-color: #cbd5e1;
+  color: #172033;
+  background: #fff;
+}
+
+.p-inputtext::placeholder,
+.p-textarea::placeholder,
+.p-select-label.p-placeholder {
+  color: #667085;
+}
+
+.p-inputtext:disabled {
+  color: #667085;
+  background: #f2f4f7;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -23,7 +44,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -208,6 +230,264 @@ h1 {
   color: #b42318;
 }
 
+.page-section {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+}
+
+.page-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.page-heading .subtitle {
+  margin-bottom: 0;
+}
+
+.content-card {
+  padding: 1.25rem;
+  border: 1px solid #e2e7ee;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.inventory-toolbar {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 1.5rem 0 1rem;
+}
+
+.search-form {
+  display: flex;
+  gap: 0.5rem;
+  width: min(100%, 520px);
+}
+
+.search-form .p-inputtext {
+  flex: 1;
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.samples-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.samples-table th,
+.samples-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #e2e7ee;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.samples-table th {
+  color: #475467;
+  background: #f8fafc;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.samples-table tbody tr {
+  cursor: pointer;
+}
+
+.samples-table tbody tr:hover,
+.samples-table tbody tr:focus {
+  outline: none;
+  background: #f0f9f6;
+}
+
+.loading-state,
+.empty-state {
+  display: grid;
+  min-height: 240px;
+  color: #667085;
+  place-items: center;
+}
+
+.loading-state .p-progressspinner {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 3.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.sample-drawer {
+  width: min(100vw, 620px) !important;
+}
+
+.detail-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detail-heading h2 {
+  margin: 0;
+}
+
+.sample-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.sample-details dl div {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e7ee;
+}
+
+.sample-details dt {
+  color: #667085;
+  font-size: 0.8rem;
+}
+
+.sample-details dd {
+  margin: 0.25rem 0 0;
+  font-weight: 600;
+}
+
+.sample-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+}
+
+.sample-form > .p-message,
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.form-field {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.form-field label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.form-field .p-inputtext,
+.form-field .p-inputnumber,
+.form-field .p-inputnumber-input,
+.form-field textarea {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.keep-values {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.keep-values label {
+  cursor: pointer;
+}
+
+.address-panel {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e7ee;
+}
+
+.address-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.address-summary div {
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.address-summary span,
+.address-summary strong {
+  display: block;
+}
+
+.address-summary span {
+  margin-bottom: 0.25rem;
+  color: #667085;
+  font-size: 0.78rem;
+}
+
+.address-actions,
+.move-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.move-form .p-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-row {
+  margin-top: 2rem;
+}
+
+.drawer-row h2 {
+  font-size: 1.1rem;
+}
+
+.drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.drawer-card {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 1px solid #e2e7ee;
+  border-radius: 0.65rem;
+  background: #fff;
+}
+
+.drawer-card span {
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.drawer-card .p-progressbar {
+  height: 0.45rem;
+}
+
 @media (max-width: 850px) {
   .app-shell {
     display: block;
@@ -234,7 +514,7 @@ h1 {
   .nav-links {
     display: grid;
     flex: 1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .nav-links a {
@@ -270,10 +550,37 @@ h1 {
   .status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .inventory-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .drawer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
   .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page-heading,
+  .search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sample-form,
+  .sample-details dl,
+  .address-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .address-actions,
+  .move-form {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

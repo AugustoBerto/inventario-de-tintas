@@ -27,6 +27,9 @@ const logout = async () => {
         <RouterLink :to="{ name: 'sample-create' }">
           <i class="pi pi-plus-circle" /> <span>Nova amostra</span>
         </RouterLink>
+        <RouterLink :to="{ name: 'drawers' }">
+          <i class="pi pi-inbox" /> <span>Gavetas</span>
+        </RouterLink>
         <RouterLink :to="{ name: 'settings' }">
           <i class="pi pi-cog" /> <span>Configurações</span>
         </RouterLink>

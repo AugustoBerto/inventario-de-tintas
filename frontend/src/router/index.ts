@@ -27,6 +27,11 @@ export const router = createRouter({
           component: () => import("@/views/SampleCreateView.vue"),
         },
         {
+          path: "drawers",
+          name: "drawers",
+          component: () => import("@/views/DrawersView.vue"),
+        },
+        {
           path: "settings",
           name: "settings",
           component: () => import("@/views/SettingsView.vue"),
@@ -51,4 +56,3 @@ router.beforeEach(async (to) => {
     return { name: "inventory" };
   }
 });
-
