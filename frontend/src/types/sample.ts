@@ -18,6 +18,7 @@ export interface Sample {
   drawer: Drawer | null;
   recommendation: DrawerSummary | null;
   divergenceReason: string | null;
+  expirationStatus: "SEM_VALIDADE" | "VALIDA" | "PROXIMA" | "VENCIDA";
   createdAt: string;
   updatedAt: string;
 }
@@ -59,4 +60,59 @@ export interface PaginatedSamples {
     total: number;
     totalPages: number;
   };
+  counters: {
+    total: number;
+    withoutAddress: number;
+    expired: number;
+    expiring: number;
+  };
+}
+
+export interface SampleFilters {
+  page: number;
+  limit: number;
+  search?: string;
+  color?: string;
+  supplier?: string;
+  brand?: string;
+  productBase?: string;
+  substrate?: string;
+  voc?: string;
+  paintApplication?: string;
+  coat?: string;
+  sampleDate?: string;
+  manufacturedAt?: string;
+  expiresAt?: string;
+  expirationStatus?: string;
+  drawerId?: string;
+  status?: string;
+  createdDate?: string;
+  sort?: string;
+  order?: "ASC" | "DESC";
+}
+
+export interface SampleMovement {
+  id: string;
+  event: string;
+  fromDrawerId: string | null;
+  toDrawerId: string | null;
+  details: Record<string, unknown> | null;
+  actorId: string;
+  actorRegistration: string | null;
+  createdAt: string;
+}
+
+export interface InventoryAccess {
+  id: string;
+  corporateUserId: string;
+  registration: string | null;
+  displayName: string;
+  profile: "ADMIN" | "OPERATOR" | "VIEWER";
+  active: boolean;
+}
+
+export interface InventorySettings {
+  defaultDrawerCapacity: number;
+  capacityAlertPercent: number;
+  expirationAlertDays: number;
 }

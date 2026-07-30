@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "primevue/button";
 import Drawer from "primevue/drawer";
@@ -9,44 +9,120 @@ import ProgressSpinner from "primevue/progressspinner";
 import Select from "primevue/select";
 import SampleAddressing from "@/components/SampleAddressing.vue";
 import SampleForm from "@/components/SampleForm.vue";
-import { getSample, listSamples } from "@/services/samples";
-import type { Sample } from "@/types/sample";
+import {
+  getSample,
+  getSampleMovements,
+  listDrawers,
+  listSamples,
+  runBatch,
+  type BatchAction,
+} from "@/services/samples";
+import { useSessionStore } from "@/stores/session";
+import type {
+  DrawerSummary,
+  Sample,
+  SampleFilters,
+  SampleMovement,
+} from "@/types/sample";
 
 const route = useRoute();
 const router = useRouter();
+const session = useSessionStore();
 const samples = ref<Sample[]>([]);
+const drawers = ref<DrawerSummary[]>([]);
+const movements = ref<SampleMovement[]>([]);
 const selected = ref<Sample | null>(null);
+const selectedIds = ref<string[]>([]);
 const detailVisible = ref(false);
+const filtersVisible = ref(false);
 const editing = ref(false);
 const loading = ref(true);
+const batchLoading = ref(false);
 const errorMessage = ref("");
-const search = ref("");
-const page = ref(1);
+const resultMessage = ref("");
+const batchResultDetails = ref("");
+const page = ref(Number(route.query.page) || 1);
 const limit = 10;
 const total = ref(0);
 const totalPages = ref(1);
-const order = ref<"ASC" | "DESC">("ASC");
-const orderOptions = [
-  { label: "Referência A–Z", value: "ASC" },
-  { label: "Referência Z–A", value: "DESC" },
+const counters = reactive({ total: 0, withoutAddress: 0, expired: 0, expiring: 0 });
+const filters = reactive<Record<string, string>>({
+  search: String(route.query.search ?? ""),
+  color: String(route.query.color ?? ""),
+  supplier: String(route.query.supplier ?? ""),
+  brand: String(route.query.brand ?? ""),
+  productBase: String(route.query.productBase ?? ""),
+  substrate: String(route.query.substrate ?? ""),
+  voc: String(route.query.voc ?? ""),
+  paintApplication: String(route.query.paintApplication ?? ""),
+  coat: String(route.query.coat ?? ""),
+  sampleDate: String(route.query.sampleDate ?? ""),
+  manufacturedAt: String(route.query.manufacturedAt ?? ""),
+  expiresAt: String(route.query.expiresAt ?? ""),
+  expirationStatus: String(route.query.expirationStatus ?? ""),
+  drawerId: String(route.query.drawerId ?? ""),
+  status: String(route.query.status ?? ""),
+  createdDate: String(route.query.createdDate ?? ""),
+  sort: String(route.query.sort ?? "reference"),
+  order: String(route.query.order ?? "ASC"),
+});
+const batchAction = ref<BatchAction>("move-to-recommended");
+const batchDrawerId = ref("");
+const expirationOptions = [
+  { label: "Sem validade", value: "SEM_VALIDADE" },
+  { label: "Válida", value: "VALIDA" },
+  { label: "Próxima do vencimento", value: "PROXIMA" },
+  { label: "Vencida", value: "VENCIDA" },
 ];
-const createdReference = computed(() =>
-  typeof route.query.created === "string" ? route.query.created : "",
+const addressOptions = ["SEM_ENDERECO", "CORRETO", "DIVERGENTE", "SEM_RECOMENDACAO"];
+const sortOptions = [
+  { label: "Referência A–Z", value: "reference:ASC" },
+  { label: "Referência Z–A", value: "reference:DESC" },
+  { label: "Validade mais próxima", value: "expiresAt:ASC" },
+  { label: "Cadastro mais recente", value: "createdAt:DESC" },
+];
+const sortValue = computed({
+  get: () => `${filters.sort}:${filters.order}`,
+  set: (value: string) => {
+    const [sort, order] = value.split(":");
+    filters.sort = sort;
+    filters.order = order;
+  },
+});
+const allPageSelected = computed(
+  () => samples.value.length > 0 && samples.value.every((item) => selectedIds.value.includes(item.id)),
 );
+const drawerOptions = computed(() =>
+  drawers.value.map((drawer) => ({
+    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number}`,
+    value: drawer.id,
+  })),
+);
+
+const queryFilters = (): SampleFilters => ({
+  page: page.value,
+  limit,
+  ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value)),
+  order: filters.order as "ASC" | "DESC",
+});
+
+const syncUrl = () =>
+  router.replace({
+    query: {
+      ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value)),
+      ...(page.value > 1 ? { page: String(page.value) } : {}),
+    },
+  });
 
 const load = async () => {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const response = await listSamples({
-      page: page.value,
-      limit,
-      search: search.value,
-      order: order.value,
-    });
+    const response = await listSamples(queryFilters());
     samples.value = response.items;
     total.value = response.pagination.total;
     totalPages.value = response.pagination.totalPages;
+    Object.assign(counters, response.counters);
   } catch {
     errorMessage.value = "Não foi possível carregar o inventário.";
   } finally {
@@ -54,14 +130,23 @@ const load = async () => {
   }
 };
 
-const submitSearch = () => {
+const applyFilters = async () => {
   page.value = 1;
-  void load();
+  await syncUrl();
+  await load();
 };
 
-const changePage = (nextPage: number) => {
+const clearFilters = async () => {
+  for (const key of Object.keys(filters)) filters[key] = "";
+  filters.sort = "reference";
+  filters.order = "ASC";
+  await applyFilters();
+};
+
+const changePage = async (nextPage: number) => {
   page.value = nextPage;
-  void load();
+  await syncUrl();
+  await load();
 };
 
 const openDetail = async (sample: Sample) => {
@@ -69,176 +154,257 @@ const openDetail = async (sample: Sample) => {
   detailVisible.value = true;
   editing.value = false;
   try {
-    selected.value = await getSample(sample.id);
+    [selected.value, movements.value] = await Promise.all([
+      getSample(sample.id),
+      getSampleMovements(sample.id),
+    ]);
   } catch {
-    errorMessage.value = "Não foi possível carregar os detalhes da amostra.";
+    errorMessage.value = "Não foi possível carregar os detalhes.";
   }
 };
 
-const sampleSaved = (sample: Sample) => {
+const sampleUpdated = (sample: Sample) => {
   selected.value = sample;
   editing.value = false;
   const index = samples.value.findIndex((item) => item.id === sample.id);
   if (index >= 0) samples.value[index] = sample;
+  void getSampleMovements(sample.id).then((items) => (movements.value = items));
 };
 
-const sampleAddressUpdated = (sample: Sample) => {
-  sampleSaved(sample);
+const togglePage = () => {
+  selectedIds.value = allPageSelected.value ? [] : samples.value.map((item) => item.id);
 };
 
-const clearCreatedMessage = async () => {
-  await router.replace({ query: {} });
+const executeBatch = async () => {
+  if (!selectedIds.value.length) return;
+  if (batchAction.value === "move" && !batchDrawerId.value) {
+    errorMessage.value = "Selecione a gaveta de destino.";
+    return;
+  }
+  batchLoading.value = true;
+  try {
+    const preview = await runBatch(
+      batchAction.value,
+      selectedIds.value,
+      true,
+      batchDrawerId.value || undefined,
+    );
+    const valid = preview.results.filter((item) => item.success).length;
+    const ignored = preview.results.length - valid;
+    if (
+      !valid ||
+      !window.confirm(
+        `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Confirmar?`,
+      )
+    ) {
+      return;
+    }
+    const result = await runBatch(
+      batchAction.value,
+      selectedIds.value,
+      false,
+      batchDrawerId.value || undefined,
+    );
+    const success = result.results.filter((item) => item.success).length;
+    resultMessage.value = `${success} item(ns) processado(s); ${result.results.length - success} ignorado(s).`;
+    batchResultDetails.value = result.results
+      .filter((item) => !item.success)
+      .map((item) => `${samples.value.find((sample) => sample.id === item.id)?.reference ?? item.id}: ${item.reason}`)
+      .join(" · ");
+    selectedIds.value = [];
+    await load();
+  } catch {
+    errorMessage.value = "Não foi possível executar a ação em lote.";
+  } finally {
+    batchLoading.value = false;
+  }
 };
 
 const formatDate = (value: string | null) =>
-  value ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(new Date(value)) : "—";
+  value
+    ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(new Date(value))
+    : "—";
+const formatDateTime = (value: string) =>
+  new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
+    new Date(value),
+  );
 
-onMounted(load);
+onMounted(async () => {
+  await Promise.all([load(), listDrawers().then((items) => (drawers.value = items))]);
+});
 </script>
 
 <template>
   <section class="page-section">
-    <span class="eyebrow">Checkpoint 2</span>
     <div class="page-heading">
       <div>
-        <h1>Inventário</h1>
-        <p class="subtitle">{{ total }} amostra(s) cadastrada(s).</p>
+        <span class="eyebrow">Inventário</span>
+        <h1>Amostras</h1>
+        <p class="subtitle">{{ total }} resultado(s) na consulta atual.</p>
       </div>
       <Button
+        v-if="session.canWrite"
         label="Nova amostra"
         icon="pi pi-plus"
         @click="router.push({ name: 'sample-create' })"
       />
     </div>
 
-    <Message
-      v-if="createdReference"
-      severity="success"
-      closable
-      @close="clearCreatedMessage"
-    >
-      Amostra {{ createdReference }} cadastrada com sucesso.
+    <div class="summary-grid">
+      <article><span>Total</span><strong>{{ counters.total }}</strong></article>
+      <article><span>Sem endereço</span><strong>{{ counters.withoutAddress }}</strong></article>
+      <article class="warning"><span>Próximas</span><strong>{{ counters.expiring }}</strong></article>
+      <article class="danger"><span>Vencidas</span><strong>{{ counters.expired }}</strong></article>
+    </div>
+
+    <Message v-if="resultMessage" severity="success" closable @close="resultMessage = ''">
+      {{ resultMessage }}
+    </Message>
+    <Message v-if="batchResultDetails" severity="warn" closable @close="batchResultDetails = ''">
+      Ignorados: {{ batchResultDetails }}
     </Message>
     <Message v-if="errorMessage" severity="error" :closable="false">
       {{ errorMessage }}
     </Message>
 
     <div class="inventory-toolbar">
-      <form class="search-form" @submit.prevent="submitSearch">
-        <InputText
-          v-model="search"
-          placeholder="Pesquisar por referência"
-          aria-label="Pesquisar por referência"
-        />
+      <form class="search-form" @submit.prevent="applyFilters">
+        <InputText v-model="filters.search" placeholder="Pesquisar referência" />
         <Button type="submit" label="Pesquisar" icon="pi pi-search" />
       </form>
+      <div class="toolbar-actions">
+        <Select
+          v-model="sortValue"
+          :options="sortOptions"
+          option-label="label"
+          option-value="value"
+          @change="applyFilters"
+        />
+        <Button label="Filtros" icon="pi pi-filter" outlined @click="filtersVisible = !filtersVisible" />
+      </div>
+    </div>
+
+    <form v-if="filtersVisible" class="content-card filters-panel" @submit.prevent="applyFilters">
+      <InputText v-model="filters.color" placeholder="Cor" />
+      <InputText v-model="filters.supplier" placeholder="Fornecedor" />
+      <InputText v-model="filters.brand" placeholder="Marca" />
+      <InputText v-model="filters.productBase" placeholder="Base Produto" />
+      <InputText v-model="filters.substrate" placeholder="Substrato" />
+      <Select v-model="filters.voc" :options="['SOLVENTE', 'BASE_AGUA']" placeholder="VOC" show-clear />
+      <InputText v-model="filters.paintApplication" placeholder="Aplicação" />
+      <InputText v-model="filters.coat" placeholder="Demão" />
+      <InputText v-model="filters.sampleDate" type="date" aria-label="Data da amostra" />
+      <InputText v-model="filters.manufacturedAt" type="date" aria-label="Fabricação" />
+      <InputText v-model="filters.expiresAt" type="date" aria-label="Validade" />
+      <InputText v-model="filters.createdDate" type="date" aria-label="Cadastro" />
       <Select
-        v-model="order"
-        :options="orderOptions"
+        v-model="filters.expirationStatus"
+        :options="expirationOptions"
         option-label="label"
         option-value="value"
-        aria-label="Ordenar amostras"
-        @change="submitSearch"
+        placeholder="Situação da validade"
+        show-clear
       />
+      <Select
+        v-model="filters.drawerId"
+        :options="drawerOptions"
+        option-label="label"
+        option-value="value"
+        placeholder="Gaveta"
+        show-clear
+      />
+      <Select v-model="filters.status" :options="addressOptions" placeholder="Situação do endereço" show-clear />
+      <div class="filter-actions">
+        <Button type="button" label="Limpar" severity="secondary" text @click="clearFilters" />
+        <Button type="submit" label="Aplicar filtros" />
+      </div>
+    </form>
+
+    <div v-if="session.canWrite && selectedIds.length" class="batch-bar">
+      <strong>{{ selectedIds.length }} selecionada(s)</strong>
+      <Select
+        v-model="batchAction"
+        :options="[
+          { label: 'Mover para recomendação', value: 'move-to-recommended' },
+          { label: 'Mover para gaveta', value: 'move' },
+          { label: 'Remover endereço', value: 'remove-address' },
+          ...(session.isAdmin ? [{ label: 'Excluir definitivamente', value: 'delete' }] : []),
+        ]"
+        option-label="label"
+        option-value="value"
+      />
+      <Select
+        v-if="batchAction === 'move'"
+        v-model="batchDrawerId"
+        :options="drawerOptions"
+        option-label="label"
+        option-value="value"
+        placeholder="Destino"
+      />
+      <Button label="Prévia e confirmar" :loading="batchLoading" @click="executeBatch" />
     </div>
 
     <div class="content-card table-card">
-      <div v-if="loading" class="loading-state">
-        <ProgressSpinner />
-      </div>
-      <div v-else-if="samples.length === 0" class="empty-state">
-        Nenhuma amostra encontrada.
-      </div>
+      <div v-if="loading" class="loading-state"><ProgressSpinner /></div>
+      <div v-else-if="samples.length === 0" class="empty-state">Nenhuma amostra encontrada.</div>
       <div v-else class="table-scroll">
         <table class="samples-table">
           <thead>
             <tr>
-              <th>Referência</th>
-              <th>Cor</th>
-              <th>Fornecedor</th>
-              <th>Base Produto</th>
-              <th>VOC</th>
-              <th>Data da amostra</th>
+              <th v-if="session.canWrite"><input type="checkbox" :checked="allPageSelected" @change="togglePage" /></th>
+              <th>Referência</th><th>Cor</th><th>Fornecedor</th><th>VOC</th><th>Endereço</th><th>Validade</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="sample in samples"
-              :key="sample.id"
-              tabindex="0"
-              @click="openDetail(sample)"
-              @keydown.enter="openDetail(sample)"
-            >
+            <tr v-for="sample in samples" :key="sample.id" tabindex="0" @click="openDetail(sample)" @keydown.enter="openDetail(sample)">
+              <td v-if="session.canWrite" @click.stop>
+                <input v-model="selectedIds" type="checkbox" :value="sample.id" />
+              </td>
               <td><strong>{{ sample.reference }}</strong></td>
               <td>{{ sample.color || "—" }}</td>
               <td>{{ sample.supplier || "—" }}</td>
-              <td>{{ sample.productBase || "—" }}</td>
-              <td>{{ sample.voc || "—" }}</td>
-              <td>{{ formatDate(sample.sampleDate) }}</td>
+              <td>{{ sample.voc === "BASE_AGUA" ? "Base água" : sample.voc || "—" }}</td>
+              <td><span class="status-badge">{{ sample.status.replaceAll("_", " ") }}</span></td>
+              <td><span :class="['expiration-badge', sample.expirationStatus.toLowerCase()]">{{ sample.expirationStatus.replaceAll("_", " ") }}</span></td>
             </tr>
           </tbody>
         </table>
       </div>
-
       <div class="pagination">
-        <Button
-          icon="pi pi-chevron-left"
-          severity="secondary"
-          text
-          aria-label="Página anterior"
-          :disabled="page === 1"
-          @click="changePage(page - 1)"
-        />
+        <Button icon="pi pi-chevron-left" text :disabled="page === 1" @click="changePage(page - 1)" />
         <span>Página {{ page }} de {{ totalPages }}</span>
-        <Button
-          icon="pi pi-chevron-right"
-          severity="secondary"
-          text
-          aria-label="Próxima página"
-          :disabled="page >= totalPages"
-          @click="changePage(page + 1)"
-        />
+        <Button icon="pi pi-chevron-right" text :disabled="page >= totalPages" @click="changePage(page + 1)" />
       </div>
     </div>
 
-    <Drawer
-      v-model:visible="detailVisible"
-      position="right"
-      class="sample-drawer"
-      header="Detalhes da amostra"
-    >
+    <Drawer v-model:visible="detailVisible" position="right" class="sample-drawer" header="Detalhes da amostra">
       <template v-if="selected">
-        <SampleForm v-if="editing" :sample="selected" @saved="sampleSaved" />
+        <SampleForm v-if="editing" :sample="selected" @saved="sampleUpdated" />
         <div v-else class="sample-details">
           <div class="detail-heading">
-            <div>
-              <span class="eyebrow">Referência</span>
-              <h2>{{ selected.reference }}</h2>
-            </div>
-            <Button label="Editar" icon="pi pi-pencil" outlined @click="editing = true" />
+            <div><span class="eyebrow">Referência</span><h2>{{ selected.reference }}</h2></div>
+            <Button v-if="session.canWrite" label="Editar" icon="pi pi-pencil" outlined @click="editing = true" />
           </div>
           <dl>
             <div><dt>Cor</dt><dd>{{ selected.color || "—" }}</dd></div>
             <div><dt>Fornecedor</dt><dd>{{ selected.supplier || "—" }}</dd></div>
             <div><dt>Base Produto</dt><dd>{{ selected.productBase || "—" }}</dd></div>
             <div><dt>VOC</dt><dd>{{ selected.voc || "—" }}</dd></div>
-            <div><dt>Data da amostra</dt><dd>{{ formatDate(selected.sampleDate) }}</dd></div>
-            <div><dt>Fabricação</dt><dd>{{ formatDate(selected.manufacturedAt) }}</dd></div>
-            <div><dt>Validade</dt><dd>{{ formatDate(selected.expiresAt) }}</dd></div>
-            <div><dt>Substrato</dt><dd>{{ selected.substrate || "—" }}</dd></div>
-            <div><dt>Aplicação</dt><dd>{{ selected.paintApplication || "—" }}</dd></div>
-            <div><dt>Marca</dt><dd>{{ selected.brand || "—" }}</dd></div>
-            <div><dt>Demão</dt><dd>{{ selected.coat || "—" }}</dd></div>
+            <div><dt>Validade</dt><dd>{{ formatDate(selected.expiresAt) }} — {{ selected.expirationStatus }}</dd></div>
             <div><dt>Status</dt><dd>{{ selected.status }}</dd></div>
           </dl>
-          <div>
-            <strong>Observações</strong>
-            <p>{{ selected.notes || "Nenhuma observação." }}</p>
-          </div>
-          <SampleAddressing
-            :sample="selected"
-            @updated="sampleAddressUpdated"
-          />
+          <SampleAddressing v-if="session.canWrite" :sample="selected" @updated="sampleUpdated" />
+          <section class="history-panel">
+            <h3>Histórico</h3>
+            <div v-if="!movements.length" class="empty-state compact">Nenhum evento registrado.</div>
+            <article v-for="movement in movements" :key="movement.id">
+              <i class="pi pi-history" />
+              <div>
+                <strong>{{ movement.event.replaceAll("_", " ") }}</strong>
+                <span>{{ formatDateTime(movement.createdAt) }} · {{ movement.actorRegistration || movement.actorId }}</span>
+              </div>
+            </article>
+          </section>
         </div>
       </template>
     </Drawer>

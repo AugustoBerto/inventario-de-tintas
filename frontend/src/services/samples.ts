@@ -3,15 +3,12 @@ import type {
   DrawerSummary,
   PaginatedSamples,
   Sample,
+  SampleFilters,
   SampleInput,
+  SampleMovement,
 } from "@/types/sample";
 
-export const listSamples = async (params: {
-  page: number;
-  limit: number;
-  search: string;
-  order: "ASC" | "DESC";
-}) =>
+export const listSamples = async (params: SampleFilters) =>
   (
     await http.get<PaginatedSamples>("/inventory/samples", {
       params,
@@ -49,3 +46,35 @@ export const moveSample = async (
 
 export const removeSampleAddress = async (id: string) =>
   (await http.delete<Sample>(`/inventory/samples/${id}/address`)).data;
+
+export const getSampleMovements = async (id: string) =>
+  (await http.get<SampleMovement[]>(`/inventory/samples/${id}/movements`)).data;
+
+export type BatchAction =
+  | "move"
+  | "move-to-recommended"
+  | "remove-address"
+  | "delete";
+
+export interface BatchResult {
+  preview: boolean;
+  results: Array<{ id: string; success: boolean; reason: string | null }>;
+}
+
+export const runBatch = async (
+  action: BatchAction,
+  ids: string[],
+  preview: boolean,
+  drawerId?: string,
+) => {
+  const config = { data: { ids, preview, drawerId } };
+  return action === "delete"
+    ? (await http.delete<BatchResult>("/inventory/samples/batch", config)).data
+    : (
+        await http.post<BatchResult>(`/inventory/samples/batch/${action}`, {
+          ids,
+          preview,
+          drawerId,
+        })
+      ).data;
+};

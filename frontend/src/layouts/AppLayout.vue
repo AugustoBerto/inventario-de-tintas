@@ -24,13 +24,13 @@ const logout = async () => {
         <RouterLink :to="{ name: 'inventory' }">
           <i class="pi pi-box" /> <span>Inventário</span>
         </RouterLink>
-        <RouterLink :to="{ name: 'sample-create' }">
+        <RouterLink v-if="session.canWrite" :to="{ name: 'sample-create' }">
           <i class="pi pi-plus-circle" /> <span>Nova amostra</span>
         </RouterLink>
         <RouterLink :to="{ name: 'drawers' }">
           <i class="pi pi-inbox" /> <span>Gavetas</span>
         </RouterLink>
-        <RouterLink :to="{ name: 'settings' }">
+        <RouterLink v-if="session.isAdmin" :to="{ name: 'settings' }">
           <i class="pi pi-cog" /> <span>Configurações</span>
         </RouterLink>
       </nav>
