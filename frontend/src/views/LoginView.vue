@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { AxiosError } from "axios";
 import { useRoute, useRouter } from "vue-router";
 import { useForm } from "vee-validate";
 import { toTypedSchema } from "@vee-validate/zod";
@@ -35,8 +36,11 @@ const submit = handleSubmit(async (values) => {
     const redirect =
       typeof route.query.redirect === "string" ? route.query.redirect : "/";
     await router.push(redirect);
-  } catch {
-    errorMessage.value = "Usuário ou senha incorretos.";
+  } catch (error) {
+    errorMessage.value =
+      error instanceof AxiosError && error.response?.status === 401
+        ? "Usuário ou senha incorretos."
+        : "A autenticação está temporariamente indisponível. Tente novamente.";
   }
 });
 </script>
@@ -83,4 +87,3 @@ const submit = handleSubmit(async (values) => {
     </section>
   </main>
 </template>
-

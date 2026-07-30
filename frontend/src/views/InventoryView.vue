@@ -191,11 +191,13 @@ const executeBatch = async () => {
     );
     const valid = preview.results.filter((item) => item.success).length;
     const ignored = preview.results.length - valid;
+    const confirmation =
+      batchAction.value === "delete"
+        ? `ATENÇÃO: ${valid} amostra(s) serão excluídas definitivamente. Esta operação não pode ser desfeita. Confirmar?`
+        : `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Confirmar?`;
     if (
       !valid ||
-      !window.confirm(
-        `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Confirmar?`,
-      )
+      !window.confirm(confirmation)
     ) {
       return;
     }
