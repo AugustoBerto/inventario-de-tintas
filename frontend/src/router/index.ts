@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useSessionStore } from "@/stores/session";
 import AppLayout from "@/layouts/AppLayout.vue";
 import LoginView from "@/views/LoginView.vue";
-import AccessDeniedView from "@/views/AccessDeniedView.vue";
 
 export const router = createRouter({
   history: createWebHistory(import.meta.env.VITE_PUBLIC_BASE || "/"),
@@ -11,11 +10,6 @@ export const router = createRouter({
       path: "/login",
       name: "login",
       component: LoginView,
-    },
-    {
-      path: "/access-denied",
-      name: "access-denied",
-      component: AccessDeniedView,
     },
     {
       path: "/",
@@ -58,10 +52,6 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !session.authenticated) {
     return { name: "login", query: { redirect: to.fullPath } };
-  }
-
-  if (session.accessDenied && to.name !== "access-denied") {
-    return { name: "access-denied" };
   }
 
   const profiles = to.meta.profiles as string[] | undefined;

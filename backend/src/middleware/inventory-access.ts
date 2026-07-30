@@ -4,6 +4,7 @@ import {
   InventoryAccess,
   type InventoryProfile,
 } from "../database/entities/InventoryAccess.js";
+import { env } from "../config/env.js";
 
 export const loadInventoryAccess =
   (dataSource: DataSource) =>
@@ -18,8 +19,22 @@ export const loadInventoryAccess =
       const repository = dataSource.getRepository(InventoryAccess);
       const corporateUserId = String(user.id);
       let access = await repository.findOneBy({ corporateUserId });
+      if (!access && user.matricula) {
+        access = await repository.findOneBy({
+          registration: String(user.matricula),
+        });
+        if (access && access.corporateUserId.startsWith("registration:")) {
+          access.corporateUserId = corporateUserId;
+          access = await repository.save(access);
+        }
+      }
 
-      if (!access && (await repository.count()) === 0) {
+      if (
+        !access &&
+        env.initialAdminRegistration &&
+        String(user.matricula ?? "") === env.initialAdminRegistration &&
+        (await repository.count()) === 0
+      ) {
         access = await repository.save(
           repository.create({
             corporateUserId,

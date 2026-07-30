@@ -38,7 +38,10 @@ const submit = handleSubmit(async (values) => {
     await router.push(redirect);
   } catch (error) {
     errorMessage.value =
-      error instanceof AxiosError && error.response?.status === 401
+      error instanceof Error && error.message === "INVENTORY_ACCESS_DENIED"
+        ? session.accessMessage ||
+          "Seu usuário corporativo não possui acesso ao inventário."
+        : error instanceof AxiosError && error.response?.status === 401
         ? "Usuário ou senha incorretos."
         : "A autenticação está temporariamente indisponível. Tente novamente.";
   }

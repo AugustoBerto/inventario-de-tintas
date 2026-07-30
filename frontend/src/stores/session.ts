@@ -16,6 +16,7 @@ export const useSessionStore = defineStore("session", () => {
   const initialized = ref(false);
   const access = ref<InventoryAccess | null>(null);
   const accessDenied = ref(false);
+  const accessMessage = ref("");
   const authenticated = computed(() => user.value !== null);
   const canWrite = computed(
     () => access.value?.profile === "ADMIN" || access.value?.profile === "OPERATOR",
@@ -27,10 +28,14 @@ export const useSessionStore = defineStore("session", () => {
       const { data } = await http.get<{ access: InventoryAccess }>("/inventory/session");
       access.value = data.access;
       accessDenied.value = false;
+      accessMessage.value = "";
     } catch (error) {
       access.value = null;
       if (error instanceof AxiosError && error.response?.status === 403) {
         accessDenied.value = true;
+        accessMessage.value =
+          error.response.data?.message ??
+          "Seu usuário corporativo não possui acesso ao inventário.";
         return;
       }
       accessDenied.value = false;
@@ -47,6 +52,7 @@ export const useSessionStore = defineStore("session", () => {
       const { data } = await http.post<AuthResponse>("/auth/me");
       applyResponse(data);
       await loadInventoryAccess();
+      if (accessDenied.value) await rejectAccess();
     } catch {
       user.value = null;
       access.value = null;
@@ -56,15 +62,20 @@ export const useSessionStore = defineStore("session", () => {
   };
 
   const login = async (usuario: string, senha: string) => {
+    accessMessage.value = "";
     const { data } = await http.post<AuthResponse>("/auth/login", {
       usuario,
       senha,
     });
     applyResponse(data);
     await loadInventoryAccess();
+    if (accessDenied.value) {
+      await rejectAccess();
+      throw new Error("INVENTORY_ACCESS_DENIED");
+    }
   };
 
-  const logout = async () => {
+  const rejectAccess = async () => {
     try {
       await http.post("/auth/logout");
     } finally {
@@ -74,10 +85,22 @@ export const useSessionStore = defineStore("session", () => {
     }
   };
 
+  const logout = async () => {
+    try {
+      await http.post("/auth/logout");
+    } finally {
+      user.value = null;
+      access.value = null;
+      accessDenied.value = false;
+      accessMessage.value = "";
+    }
+  };
+
   return {
     user,
     access,
     accessDenied,
+    accessMessage,
     initialized,
     authenticated,
     canWrite,

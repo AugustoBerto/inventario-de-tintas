@@ -60,9 +60,14 @@ describe("session", () => {
     expect(response.status).toBe(401);
   });
 
-  it("transforma o primeiro usuário válido em administrador inicial", async () => {
+  it("rejeita usuário corporativo sem acesso local", async () => {
     const token = jsonwebtoken.sign(
-      { id: 9, usuario: "ADMIN", nome: "Administrador Inicial" },
+      {
+        id: 8,
+        usuario: "SEM_ACESSO",
+        matricula: "80008",
+        nome: "Usuário sem acesso",
+      },
       env.jwtSecret,
       { expiresIn: "5m" },
     );
@@ -70,11 +75,35 @@ describe("session", () => {
       .get("/session")
       .set("Cookie", [`token=${token}`]);
 
-    expect(response.status).toBe(200);
-    expect(response.body.access).toMatchObject({
-      corporateUserId: "9",
-      profile: "ADMIN",
-      active: true,
-    });
+    expect(response.status).toBe(403);
+  });
+
+  it("autoriza somente a matrícula configurada como administrador inicial", async () => {
+    const previousRegistration = env.initialAdminRegistration;
+    env.initialAdminRegistration = "90009";
+    const token = jsonwebtoken.sign(
+      {
+        id: 9,
+        usuario: "ADMIN",
+        matricula: "90009",
+        nome: "Administrador Inicial",
+      },
+      env.jwtSecret,
+      { expiresIn: "5m" },
+    );
+    try {
+      const response = await request(createApp(createDataSource(null)))
+        .get("/session")
+        .set("Cookie", [`token=${token}`]);
+
+      expect(response.status).toBe(200);
+      expect(response.body.access).toMatchObject({
+        corporateUserId: "9",
+        profile: "ADMIN",
+        active: true,
+      });
+    } finally {
+      env.initialAdminRegistration = previousRegistration;
+    }
   });
 });
