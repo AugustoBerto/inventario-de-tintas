@@ -5,6 +5,7 @@ import { createApp } from "../src/app.js";
 
 const dataSource = {
   query: vi.fn().mockResolvedValue([{ "?column?": 1 }]),
+  getRepository: vi.fn().mockReturnValue({}),
 } as unknown as DataSource;
 
 describe("health", () => {
@@ -30,4 +31,3 @@ describe("health", () => {
     });
   });
 });
-
