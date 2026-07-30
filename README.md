@@ -19,9 +19,8 @@ npm run migration:run
 npm run dev
 ```
 
-No ambiente local deste workspace, o backend pode carregar `JWT_SECRET` e a senha
-do PostgreSQL diretamente do `.env` do `dass_auth_service` por meio de
-`AUTH_ENV_FILE`. Em outros ambientes, informe as variáveis explicitamente.
+O Inventory usa apenas as próprias variáveis de ambiente. Defina diretamente o
+mesmo `JWT_SECRET` do Auth Service e as credenciais `DATABASE_*`.
 
 ## Endereços locais
 

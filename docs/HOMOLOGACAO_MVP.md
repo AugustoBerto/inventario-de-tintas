@@ -4,6 +4,8 @@
 
 - [ ] `.env` do backend revisado sem valores de desenvolvimento.
 - [ ] `JWT_SECRET` igual ao Auth Service.
+- [ ] `AUTH_SERVICE_URL` aponta para a porta interna do Auth Service.
+- [ ] `INVENTORY_INITIAL_ADMIN_REGISTRATION` contém a matrícula do administrador inicial.
 - [ ] `INVENTORY_SERVICE` configurado no Gateway.
 - [ ] PostgreSQL acessível.
 - [ ] Backup criado e restauração validada em banco separado.

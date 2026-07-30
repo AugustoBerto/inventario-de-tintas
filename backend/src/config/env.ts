@@ -1,15 +1,7 @@
-import path from "node:path";
 import { config } from "dotenv";
 import { z } from "zod";
 
 config();
-
-if (process.env.AUTH_ENV_FILE) {
-  config({
-    path: path.resolve(process.cwd(), process.env.AUTH_ENV_FILE),
-    override: false,
-  });
-}
 
 const booleanFromString = z
   .enum(["true", "false"])
@@ -23,17 +15,14 @@ const schema = z.object({
   LOG_LEVEL: z.string().default("info"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET é obrigatório"),
-  DATABASE_HOST: z.string().optional(),
-  DATABASE_PORT: z.coerce.number().int().positive().optional(),
-  DATABASE_USER: z.string().optional(),
-  DATABASE_PASSWORD: z.string().optional(),
-  DATABASE_NAME: z.string().optional(),
+  AUTH_SERVICE_URL: z.string().url().default("http://localhost:2400"),
+  INVENTORY_INITIAL_ADMIN_REGISTRATION: z.string().trim().optional(),
+  DATABASE_HOST: z.string().default("localhost"),
+  DATABASE_PORT: z.coerce.number().int().positive().default(5432),
+  DATABASE_USER: z.string().default("postgres"),
+  DATABASE_PASSWORD: z.string().min(1, "DATABASE_PASSWORD é obrigatório"),
+  DATABASE_NAME: z.string().default("postgres"),
   DATABASE_SSL: booleanFromString,
-  IP: z.string().optional(),
-  PORT_AUTH_DATABASE: z.coerce.number().int().positive().optional(),
-  USERS: z.string().optional(),
-  PASS: z.string().optional(),
-  DBASE: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -53,16 +42,14 @@ export const env = {
   logLevel: values.LOG_LEVEL,
   corsOrigins: values.CORS_ORIGINS.split(",").map((origin) => origin.trim()),
   jwtSecret: values.JWT_SECRET,
+  authServiceUrl: values.AUTH_SERVICE_URL.replace(/\/$/, ""),
+  initialAdminRegistration: values.INVENTORY_INITIAL_ADMIN_REGISTRATION,
   database: {
-    host: values.DATABASE_HOST ?? values.IP ?? "localhost",
-    port:
-      values.DATABASE_PORT ??
-      values.PORT_AUTH_DATABASE ??
-      Number(process.env.PORT ?? 5432),
-    username: values.DATABASE_USER ?? values.USERS ?? "postgres",
-    password: values.DATABASE_PASSWORD ?? values.PASS ?? "",
-    database: values.DATABASE_NAME ?? values.DBASE ?? "postgres",
+    host: values.DATABASE_HOST,
+    port: values.DATABASE_PORT,
+    username: values.DATABASE_USER,
+    password: values.DATABASE_PASSWORD,
+    database: values.DATABASE_NAME,
     ssl: values.DATABASE_SSL,
   },
 };
-

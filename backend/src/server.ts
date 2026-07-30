@@ -25,7 +25,6 @@ const start = async () => {
 };
 
 start().catch((error) => {
-  logger.fatal({ error }, "inventory_api_start_failed");
+  logger.fatal({ err: error }, "inventory_api_start_failed");
   process.exit(1);
 });
-
