@@ -121,6 +121,10 @@ h1 {
   grid-area: nav;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
   padding: 1.25rem 0.85rem;
   background: #172033;
 }
@@ -138,6 +142,8 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .nav-links a {
@@ -479,6 +485,51 @@ h1 {
   background: #fff;
 }
 
+.drawer-card.interactive-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.drawer-card.interactive-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  border-color: #0284c7;
+}
+
+.drawer-card.interactive-card:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+}
+
+.drawer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-card-header .card-arrow {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.drawer-card.interactive-card:hover .card-arrow {
+  color: #0284c7;
+  transform: translateX(3px);
+}
+
+.drawer-card-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-card-info .count {
+  font-weight: 500;
+  color: #475569;
+}
+
 .drawer-card span {
   color: #667085;
   font-size: 0.82rem;
@@ -491,6 +542,155 @@ h1 {
 .drawer-card.capacity-warning {
   border-color: #f79009;
   background: #fffaeb;
+}
+
+/* Drawer detail modal */
+.drawer-detail-modal .drawer-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+.drawer-summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.drawer-summary-box h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #0f172a;
+}
+
+.drawer-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.capacity-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.capacity-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.view-inventory-link {
+  text-decoration: none;
+  margin-top: 0.25rem;
+}
+
+.view-inventory-link .p-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.drawer-samples-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.drawer-samples-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.drawer-samples-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.drawer-sample-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.drawer-sample-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.sample-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sample-ref-link {
+  color: #0284c7;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sample-ref-link:hover {
+  text-decoration: underline;
+}
+
+.sample-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.35rem;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.sample-item-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .summary-grid {
