@@ -22,8 +22,10 @@ const schema = toTypedSchema(
     .object({
       reference: z.string().trim().min(1, "Informe a referência.").max(80),
       addressRecommended: z.boolean().default(false),
+      /* DESABILITADO: Data da amostra / Fabricação
       sampleDate: z.string().optional(),
       manufacturedAt: z.string().optional(),
+      */
       expiresAt: z.string().optional(),
       productBase: optionalText(120),
       supplier: optionalText(120),
@@ -34,7 +36,8 @@ const schema = toTypedSchema(
       brand: optionalText(120),
       coat: optionalText(40),
       notes: optionalText(4000),
-    })
+    }),
+    /* DESABILITADO: Validação entre fabricação e validade
     .refine(
       (values) =>
         !values.manufacturedAt ||
@@ -45,13 +48,16 @@ const schema = toTypedSchema(
         message: "A validade não pode ser anterior à fabricação.",
       },
     ),
+    */
 );
 
 const initialValues = (sample?: Sample | null) => ({
   reference: sample?.reference ?? "",
   addressRecommended: false,
+  /* DESABILITADO: Data da amostra / Fabricação
   sampleDate: sample?.sampleDate ?? "",
   manufacturedAt: sample?.manufacturedAt ?? "",
+  */
   expiresAt: sample?.expiresAt ?? "",
   productBase: sample?.productBase ?? "",
   supplier: sample?.supplier ?? "",
@@ -72,12 +78,17 @@ const {
   resetForm,
   setFieldError,
   setErrors,
-} = useForm({ validationSchema: schema, initialValues: initialValues(props.sample) });
+} = useForm({
+  validationSchema: schema,
+  initialValues: initialValues(props.sample),
+});
 
 const [reference] = defineField("reference");
 const [addressRecommended] = defineField("addressRecommended");
+/* DESABILITADO: Data da amostra / Fabricação
 const [sampleDate] = defineField("sampleDate");
 const [manufacturedAt] = defineField("manufacturedAt");
+*/
 const [expiresAt] = defineField("expiresAt");
 const [productBase] = defineField("productBase");
 const [supplier] = defineField("supplier");
@@ -122,13 +133,17 @@ const submit = handleSubmit(async (values) => {
       });
     }
   } catch (error) {
-    const response = (error as AxiosError<{ message?: string; fields?: Record<string, string> }>)
-      .response?.data;
+    const response = (
+      error as AxiosError<{ message?: string; fields?: Record<string, string> }>
+    ).response?.data;
     for (const [field, message] of Object.entries(response?.fields ?? {})) {
       setFieldError(field as keyof typeof values, message);
     }
     if (!response?.fields) {
-      setFieldError("reference", response?.message ?? "Não foi possível salvar a amostra.");
+      setFieldError(
+        "reference",
+        response?.message ?? "Não foi possível salvar a amostra.",
+      );
     }
   }
 });
@@ -152,6 +167,7 @@ const submit = handleSubmit(async (values) => {
       <small class="field-error">{{ errors.reference }}</small>
     </div>
 
+    <!-- DESABILITADO: Data da amostra e Fabricação
     <div class="form-field">
       <label for="sample-date">Data da amostra</label>
       <InputText id="sample-date" v-model="sampleDate" type="date" />
@@ -160,6 +176,7 @@ const submit = handleSubmit(async (values) => {
       <label for="manufactured-at">Fabricação</label>
       <InputText id="manufactured-at" v-model="manufacturedAt" type="date" />
     </div>
+    -->
     <div class="form-field">
       <label for="expires-at">Validade</label>
       <InputText

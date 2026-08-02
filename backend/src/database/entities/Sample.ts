@@ -7,9 +7,10 @@ import {
   JoinColumn,
   ManyToOne,
 } from "typeorm";
+import { INVENTORY_SCHEMA } from "../schema.js";
 import { Drawer } from "./Drawer.js";
 
-@Entity({ name: "samples" })
+@Entity({ schema: INVENTORY_SCHEMA, name: "samples" })
 export class Sample {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -17,16 +18,23 @@ export class Sample {
   @Column({ type: "varchar", length: 80, unique: true })
   reference!: string;
 
+  /* DESABILITADO: Data da amostra / Fabricação */
   @Column({ type: "date", name: "sample_date", nullable: true })
   sampleDate!: string | null;
 
+  /* DESABILITADO: Data da amostra / Fabricação */
   @Column({ type: "date", name: "manufactured_at", nullable: true })
   manufacturedAt!: string | null;
 
   @Column({ type: "date", name: "expires_at", nullable: true })
   expiresAt!: string | null;
 
-  @Column({ type: "varchar", name: "product_base", length: 120, nullable: true })
+  @Column({
+    type: "varchar",
+    name: "product_base",
+    length: 120,
+    nullable: true,
+  })
   productBase!: string | null;
 
   @Column({ type: "varchar", length: 120, nullable: true })

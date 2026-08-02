@@ -45,7 +45,12 @@ const page = ref(Number(route.query.page) || 1);
 const limit = 10;
 const total = ref(0);
 const totalPages = ref(1);
-const counters = reactive({ total: 0, withoutAddress: 0, expired: 0, expiring: 0 });
+const counters = reactive({
+  total: 0,
+  withoutAddress: 0,
+  expired: 0,
+  expiring: 0,
+});
 const filters = reactive<Record<string, string>>({
   search: String(route.query.search ?? ""),
   color: String(route.query.color ?? ""),
@@ -74,7 +79,12 @@ const expirationOptions = [
   { label: "Próxima do vencimento", value: "PROXIMA" },
   { label: "Vencida", value: "VENCIDA" },
 ];
-const addressOptions = ["SEM_ENDERECO", "CORRETO", "DIVERGENTE", "SEM_RECOMENDACAO"];
+const addressOptions = [
+  "SEM_ENDERECO",
+  "CORRETO",
+  "DIVERGENTE",
+  "SEM_RECOMENDACAO",
+];
 const sortOptions = [
   { label: "Referência A–Z", value: "reference:ASC" },
   { label: "Referência Z–A", value: "reference:DESC" },
@@ -90,7 +100,9 @@ const sortValue = computed({
   },
 });
 const allPageSelected = computed(
-  () => samples.value.length > 0 && samples.value.every((item) => selectedIds.value.includes(item.id)),
+  () =>
+    samples.value.length > 0 &&
+    samples.value.every((item) => selectedIds.value.includes(item.id)),
 );
 const drawerOptions = computed(() =>
   drawers.value.map((drawer) => ({
@@ -109,7 +121,9 @@ const queryFilters = (): SampleFilters => ({
 const syncUrl = () =>
   router.replace({
     query: {
-      ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value)),
+      ...Object.fromEntries(
+        Object.entries(filters).filter(([, value]) => value),
+      ),
       ...(page.value > 1 ? { page: String(page.value) } : {}),
     },
   });
@@ -172,7 +186,9 @@ const sampleUpdated = (sample: Sample) => {
 };
 
 const togglePage = () => {
-  selectedIds.value = allPageSelected.value ? [] : samples.value.map((item) => item.id);
+  selectedIds.value = allPageSelected.value
+    ? []
+    : samples.value.map((item) => item.id);
 };
 
 const executeBatch = async () => {
@@ -195,10 +211,7 @@ const executeBatch = async () => {
       batchAction.value === "delete"
         ? `ATENÇÃO: ${valid} amostra(s) serão excluídas definitivamente. Esta operação não pode ser desfeita. Confirmar?`
         : `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Confirmar?`;
-    if (
-      !valid ||
-      !window.confirm(confirmation)
-    ) {
+    if (!valid || !window.confirm(confirmation)) {
       return;
     }
     const result = await runBatch(
@@ -211,7 +224,10 @@ const executeBatch = async () => {
     resultMessage.value = `${success} item(ns) processado(s); ${result.results.length - success} ignorado(s).`;
     batchResultDetails.value = result.results
       .filter((item) => !item.success)
-      .map((item) => `${samples.value.find((sample) => sample.id === item.id)?.reference ?? item.id}: ${item.reason}`)
+      .map(
+        (item) =>
+          `${samples.value.find((sample) => sample.id === item.id)?.reference ?? item.id}: ${item.reason}`,
+      )
       .join(" · ");
     selectedIds.value = [];
     await load();
@@ -224,15 +240,21 @@ const executeBatch = async () => {
 
 const formatDate = (value: string | null) =>
   value
-    ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(new Date(value))
+    ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+        new Date(value),
+      )
     : "—";
 const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(
-    new Date(value),
-  );
+  new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 
 onMounted(async () => {
-  await Promise.all([load(), listDrawers().then((items) => (drawers.value = items))]);
+  await Promise.all([
+    load(),
+    listDrawers().then((items) => (drawers.value = items)),
+  ]);
 });
 </script>
 
@@ -253,16 +275,34 @@ onMounted(async () => {
     </div>
 
     <div class="summary-grid">
-      <article><span>Total</span><strong>{{ counters.total }}</strong></article>
-      <article><span>Sem endereço</span><strong>{{ counters.withoutAddress }}</strong></article>
-      <article class="warning"><span>Próximas</span><strong>{{ counters.expiring }}</strong></article>
-      <article class="danger"><span>Vencidas</span><strong>{{ counters.expired }}</strong></article>
+      <article>
+        <span>Total</span><strong>{{ counters.total }}</strong>
+      </article>
+      <article>
+        <span>Sem endereço</span><strong>{{ counters.withoutAddress }}</strong>
+      </article>
+      <article class="warning">
+        <span>Próximas</span><strong>{{ counters.expiring }}</strong>
+      </article>
+      <article class="danger">
+        <span>Vencidas</span><strong>{{ counters.expired }}</strong>
+      </article>
     </div>
 
-    <Message v-if="resultMessage" severity="success" closable @close="resultMessage = ''">
+    <Message
+      v-if="resultMessage"
+      severity="success"
+      closable
+      @close="resultMessage = ''"
+    >
       {{ resultMessage }}
     </Message>
-    <Message v-if="batchResultDetails" severity="warn" closable @close="batchResultDetails = ''">
+    <Message
+      v-if="batchResultDetails"
+      severity="warn"
+      closable
+      @close="batchResultDetails = ''"
+    >
       Ignorados: {{ batchResultDetails }}
     </Message>
     <Message v-if="errorMessage" severity="error" :closable="false">
@@ -271,7 +311,10 @@ onMounted(async () => {
 
     <div class="inventory-toolbar">
       <form class="search-form" @submit.prevent="applyFilters">
-        <InputText v-model="filters.search" placeholder="Pesquisar referência" />
+        <InputText
+          v-model="filters.search"
+          placeholder="Pesquisar referência"
+        />
         <Button type="submit" label="Pesquisar" icon="pi pi-search" />
       </form>
       <div class="toolbar-actions">
@@ -282,23 +325,55 @@ onMounted(async () => {
           option-value="value"
           @change="applyFilters"
         />
-        <Button label="Filtros" icon="pi pi-filter" outlined @click="filtersVisible = !filtersVisible" />
+        <Button
+          label="Filtros"
+          icon="pi pi-filter"
+          outlined
+          @click="filtersVisible = !filtersVisible"
+        />
       </div>
     </div>
 
-    <form v-if="filtersVisible" class="content-card filters-panel" @submit.prevent="applyFilters">
+    <form
+      v-if="filtersVisible"
+      class="content-card filters-panel"
+      @submit.prevent="applyFilters"
+    >
       <InputText v-model="filters.color" placeholder="Cor" />
       <InputText v-model="filters.supplier" placeholder="Fornecedor" />
       <InputText v-model="filters.brand" placeholder="Marca" />
       <InputText v-model="filters.productBase" placeholder="Base Produto" />
       <InputText v-model="filters.substrate" placeholder="Substrato" />
-      <Select v-model="filters.voc" :options="['SOLVENTE', 'BASE_AGUA']" placeholder="VOC" show-clear />
+      <Select
+        v-model="filters.voc"
+        :options="['SOLVENTE', 'BASE_AGUA']"
+        placeholder="VOC"
+        show-clear
+      />
       <InputText v-model="filters.paintApplication" placeholder="Aplicação" />
       <InputText v-model="filters.coat" placeholder="Demão" />
-      <InputText v-model="filters.sampleDate" type="date" aria-label="Data da amostra" />
-      <InputText v-model="filters.manufacturedAt" type="date" aria-label="Fabricação" />
-      <InputText v-model="filters.expiresAt" type="date" aria-label="Validade" />
-      <InputText v-model="filters.createdDate" type="date" aria-label="Cadastro" />
+      <!-- DESABILITADO: Data da amostra e Fabricação
+      <InputText
+        v-model="filters.sampleDate"
+        type="date"
+        aria-label="Data da amostra"
+      />
+      <InputText
+        v-model="filters.manufacturedAt"
+        type="date"
+        aria-label="Fabricação"
+      />
+      -->
+      <InputText
+        v-model="filters.expiresAt"
+        type="date"
+        aria-label="Validade"
+      />
+      <InputText
+        v-model="filters.createdDate"
+        type="date"
+        aria-label="Cadastro"
+      />
       <Select
         v-model="filters.expirationStatus"
         :options="expirationOptions"
@@ -315,9 +390,20 @@ onMounted(async () => {
         placeholder="Gaveta"
         show-clear
       />
-      <Select v-model="filters.status" :options="addressOptions" placeholder="Situação do endereço" show-clear />
+      <Select
+        v-model="filters.status"
+        :options="addressOptions"
+        placeholder="Situação do endereço"
+        show-clear
+      />
       <div class="filter-actions">
-        <Button type="button" label="Limpar" severity="secondary" text @click="clearFilters" />
+        <Button
+          type="button"
+          label="Limpar"
+          severity="secondary"
+          text
+          @click="clearFilters"
+        />
         <Button type="submit" label="Aplicar filtros" />
       </div>
     </form>
@@ -330,7 +416,9 @@ onMounted(async () => {
           { label: 'Mover para recomendação', value: 'move-to-recommended' },
           { label: 'Mover para gaveta', value: 'move' },
           { label: 'Remover endereço', value: 'remove-address' },
-          ...(session.isAdmin ? [{ label: 'Excluir definitivamente', value: 'delete' }] : []),
+          ...(session.isAdmin
+            ? [{ label: 'Excluir definitivamente', value: 'delete' }]
+            : []),
         ]"
         option-label="label"
         option-value="value"
@@ -343,67 +431,166 @@ onMounted(async () => {
         option-value="value"
         placeholder="Destino"
       />
-      <Button label="Prévia e confirmar" :loading="batchLoading" @click="executeBatch" />
+      <Button
+        label="Prévia e confirmar"
+        :loading="batchLoading"
+        @click="executeBatch"
+      />
     </div>
 
     <div class="content-card table-card">
       <div v-if="loading" class="loading-state"><ProgressSpinner /></div>
-      <div v-else-if="samples.length === 0" class="empty-state">Nenhuma amostra encontrada.</div>
+      <div v-else-if="samples.length === 0" class="empty-state">
+        Nenhuma amostra encontrada.
+      </div>
       <div v-else class="table-scroll">
         <table class="samples-table">
           <thead>
             <tr>
-              <th v-if="session.canWrite"><input type="checkbox" :checked="allPageSelected" @change="togglePage" /></th>
-              <th>Referência</th><th>Cor</th><th>Fornecedor</th><th>VOC</th><th>Endereço</th><th>Validade</th>
+              <th v-if="session.canWrite">
+                <input
+                  type="checkbox"
+                  :checked="allPageSelected"
+                  @change="togglePage"
+                />
+              </th>
+              <th>Referência</th>
+              <th>Cor</th>
+              <th>Fornecedor</th>
+              <th>VOC</th>
+              <th>Endereço</th>
+              <th>Validade</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="sample in samples" :key="sample.id" tabindex="0" @click="openDetail(sample)" @keydown.enter="openDetail(sample)">
+            <tr
+              v-for="sample in samples"
+              :key="sample.id"
+              tabindex="0"
+              @click="openDetail(sample)"
+              @keydown.enter="openDetail(sample)"
+            >
               <td v-if="session.canWrite" @click.stop>
-                <input v-model="selectedIds" type="checkbox" :value="sample.id" />
+                <input
+                  v-model="selectedIds"
+                  type="checkbox"
+                  :value="sample.id"
+                />
               </td>
-              <td><strong>{{ sample.reference }}</strong></td>
+              <td>
+                <strong>{{ sample.reference }}</strong>
+              </td>
               <td>{{ sample.color || "—" }}</td>
               <td>{{ sample.supplier || "—" }}</td>
-              <td>{{ sample.voc === "BASE_AGUA" ? "Base água" : sample.voc || "—" }}</td>
-              <td><span class="status-badge">{{ sample.status.replaceAll("_", " ") }}</span></td>
-              <td><span :class="['expiration-badge', sample.expirationStatus.toLowerCase()]">{{ sample.expirationStatus.replaceAll("_", " ") }}</span></td>
+              <td>
+                {{
+                  sample.voc === "BASE_AGUA" ? "Base água" : sample.voc || "—"
+                }}
+              </td>
+              <td>
+                <span class="status-badge">{{
+                  sample.status.replaceAll("_", " ")
+                }}</span>
+              </td>
+              <td>
+                <span
+                  :class="[
+                    'expiration-badge',
+                    sample.expirationStatus.toLowerCase(),
+                  ]"
+                  >{{ sample.expirationStatus.replaceAll("_", " ") }}</span
+                >
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
       <div class="pagination">
-        <Button icon="pi pi-chevron-left" text :disabled="page === 1" @click="changePage(page - 1)" />
+        <Button
+          icon="pi pi-chevron-left"
+          text
+          :disabled="page === 1"
+          @click="changePage(page - 1)"
+        />
         <span>Página {{ page }} de {{ totalPages }}</span>
-        <Button icon="pi pi-chevron-right" text :disabled="page >= totalPages" @click="changePage(page + 1)" />
+        <Button
+          icon="pi pi-chevron-right"
+          text
+          :disabled="page >= totalPages"
+          @click="changePage(page + 1)"
+        />
       </div>
     </div>
 
-    <Drawer v-model:visible="detailVisible" position="right" class="sample-drawer" header="Detalhes da amostra">
+    <Drawer
+      v-model:visible="detailVisible"
+      position="right"
+      class="sample-drawer"
+      header="Detalhes da amostra"
+    >
       <template v-if="selected">
         <SampleForm v-if="editing" :sample="selected" @saved="sampleUpdated" />
         <div v-else class="sample-details">
           <div class="detail-heading">
-            <div><span class="eyebrow">Referência</span><h2>{{ selected.reference }}</h2></div>
-            <Button v-if="session.canWrite" label="Editar" icon="pi pi-pencil" outlined @click="editing = true" />
+            <div>
+              <span class="eyebrow">Referência</span>
+              <h2>{{ selected.reference }}</h2>
+            </div>
+            <Button
+              v-if="session.canWrite"
+              label="Editar"
+              icon="pi pi-pencil"
+              outlined
+              @click="editing = true"
+            />
           </div>
           <dl>
-            <div><dt>Cor</dt><dd>{{ selected.color || "—" }}</dd></div>
-            <div><dt>Fornecedor</dt><dd>{{ selected.supplier || "—" }}</dd></div>
-            <div><dt>Base Produto</dt><dd>{{ selected.productBase || "—" }}</dd></div>
-            <div><dt>VOC</dt><dd>{{ selected.voc || "—" }}</dd></div>
-            <div><dt>Validade</dt><dd>{{ formatDate(selected.expiresAt) }} — {{ selected.expirationStatus }}</dd></div>
-            <div><dt>Status</dt><dd>{{ selected.status }}</dd></div>
+            <div>
+              <dt>Cor</dt>
+              <dd>{{ selected.color || "—" }}</dd>
+            </div>
+            <div>
+              <dt>Fornecedor</dt>
+              <dd>{{ selected.supplier || "—" }}</dd>
+            </div>
+            <div>
+              <dt>Base Produto</dt>
+              <dd>{{ selected.productBase || "—" }}</dd>
+            </div>
+            <div>
+              <dt>VOC</dt>
+              <dd>{{ selected.voc || "—" }}</dd>
+            </div>
+            <div>
+              <dt>Validade</dt>
+              <dd>
+                {{ formatDate(selected.expiresAt) }} —
+                {{ selected.expirationStatus }}
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{{ selected.status }}</dd>
+            </div>
           </dl>
-          <SampleAddressing v-if="session.canWrite" :sample="selected" @updated="sampleUpdated" />
+          <SampleAddressing
+            v-if="session.canWrite"
+            :sample="selected"
+            @updated="sampleUpdated"
+          />
           <section class="history-panel">
             <h3>Histórico</h3>
-            <div v-if="!movements.length" class="empty-state compact">Nenhum evento registrado.</div>
+            <div v-if="!movements.length" class="empty-state compact">
+              Nenhum evento registrado.
+            </div>
             <article v-for="movement in movements" :key="movement.id">
               <i class="pi pi-history" />
               <div>
                 <strong>{{ movement.event.replaceAll("_", " ") }}</strong>
-                <span>{{ formatDateTime(movement.createdAt) }} · {{ movement.actorRegistration || movement.actorId }}</span>
+                <span
+                  >{{ formatDateTime(movement.createdAt) }} ·
+                  {{ movement.actorRegistration || movement.actorId }}</span
+                >
               </div>
             </article>
           </section>

@@ -1,8 +1,12 @@
 export interface Sample {
   id: string;
   reference: string;
+  /* DESABILITADO: Data da amostra / Fabricação
   sampleDate: string | null;
   manufacturedAt: string | null;
+  */
+  sampleDate?: string | null;
+  manufacturedAt?: string | null;
   expiresAt: string | null;
   productBase: string | null;
   supplier: string | null;
@@ -26,6 +30,10 @@ export interface Sample {
 export interface SampleInput {
   reference?: string;
   addressRecommended?: boolean;
+  /* DESABILITADO: Data da amostra / Fabricação
+  sampleDate?: string;
+  manufacturedAt?: string;
+  */
   sampleDate?: string;
   manufacturedAt?: string;
   expiresAt?: string;
