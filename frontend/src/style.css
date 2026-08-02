@@ -716,6 +716,13 @@ h1 {
   width: 100%;
 }
 
+.p-dialog-header-icon:focus,
+.p-dialog-header-close:focus,
+.p-dialog-close-button:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .drawer-samples-section {
   display: flex;
   flex-direction: column;

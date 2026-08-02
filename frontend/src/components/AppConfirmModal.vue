@@ -42,9 +42,10 @@ const handleConfirm = () => {
   <Dialog
     :visible="visible"
     modal
+    :draggable="false"
+    :closable="false"
     :header="title"
     :style="{ width: '90%', maxWidth: '440px' }"
-    :closable="!loading"
     @update:visible="emit('update:visible', $event)"
   >
     <div class="confirm-modal-body">
