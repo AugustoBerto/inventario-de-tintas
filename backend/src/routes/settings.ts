@@ -10,7 +10,6 @@ import {
 } from "../middleware/inventory-access.js";
 
 const settingsSchema = z.object({
-  defaultDrawerCapacity: z.number().int().min(1).max(10000),
   maxDrawerCapacity: z.number().int().min(1).max(10000),
   capacityAlertPercent: z.number().int().min(1).max(100),
   expirationAlertDays: z.number().int().min(0).max(3650),
@@ -20,14 +19,12 @@ const readSettings = async (dataSource: DataSource) => {
   const rows = await dataSource
     .getRepository(InventorySetting)
     .findBy([
-      { key: "defaultDrawerCapacity" },
       { key: "maxDrawerCapacity" },
       { key: "capacityAlertPercent" },
       { key: "expirationAlertDays" },
     ]);
   const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
   return {
-    defaultDrawerCapacity: Number(values.defaultDrawerCapacity ?? 30),
     maxDrawerCapacity: Number(values.maxDrawerCapacity ?? 100),
     capacityAlertPercent: Number(values.capacityAlertPercent ?? 80),
     expirationAlertDays: Number(values.expirationAlertDays ?? 30),

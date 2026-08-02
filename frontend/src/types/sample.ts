@@ -121,7 +121,6 @@ export interface InventoryAccess {
 }
 
 export interface InventorySettings {
-  defaultDrawerCapacity: number;
   maxDrawerCapacity: number;
   capacityAlertPercent: number;
   expirationAlertDays: number;

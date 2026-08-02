@@ -19,7 +19,6 @@ import type { CorporateUserLookup } from "@/services/admin";
 import type { InventoryAccess, InventorySettings } from "@/types/sample";
 
 const settings = reactive<InventorySettings>({
-  defaultDrawerCapacity: 30,
   maxDrawerCapacity: 100,
   capacityAlertPercent: 80,
   expirationAlertDays: 30,
@@ -136,10 +135,6 @@ onMounted(async () => {
     <section class="content-card admin-section">
       <h2>Configurações</h2>
       <div class="settings-grid">
-        <label>
-          Capacidade padrão
-          <InputNumber v-model="settings.defaultDrawerCapacity" :min="1" />
-        </label>
         <label>
           Capacidade máxima
           <InputNumber v-model="settings.maxDrawerCapacity" :min="1" />

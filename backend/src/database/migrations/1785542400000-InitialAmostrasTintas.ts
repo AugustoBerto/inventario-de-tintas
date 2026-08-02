@@ -22,7 +22,7 @@ export class InitialAmostrasTintas1785542400000 implements MigrationInterface {
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "type" varchar(20) NOT NULL,
         "number" smallint NOT NULL,
-        "capacity" smallint NOT NULL DEFAULT 100,
+        "capacity" smallint NOT NULL DEFAULT 30,
         CONSTRAINT "UQ_drawers_type_number" UNIQUE ("type", "number"),
         CONSTRAINT "CHK_drawers_number" CHECK ("number" BETWEEN 0 AND 9),
         CONSTRAINT "CHK_drawers_capacity" CHECK ("capacity" > 0)
@@ -107,7 +107,6 @@ export class InitialAmostrasTintas1785542400000 implements MigrationInterface {
       INSERT INTO ${schema}."inventory_settings" ("key", "value")
       VALUES
         ('foundation', '{"version":"0.2.0"}'::jsonb),
-        ('defaultDrawerCapacity', '30'::jsonb),
         ('maxDrawerCapacity', '100'::jsonb),
         ('capacityAlertPercent', '80'::jsonb),
         ('expirationAlertDays', '30'::jsonb)

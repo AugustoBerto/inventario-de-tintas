@@ -15,6 +15,6 @@ export class Drawer {
   @Column({ type: "smallint" })
   number!: number;
 
-  @Column({ type: "smallint", default: 100 })
+  @Column({ type: "smallint", default: 30 })
   capacity!: number;
 }
