@@ -78,12 +78,14 @@ const findCorporateUser = async () => {
   }
   lookingUp.value = true;
   try {
-    corporateUser.value = await lookupCorporateUser(newUser.registration.trim());
+    corporateUser.value = await lookupCorporateUser(
+      newUser.registration.trim(),
+    );
   } catch (error) {
     errorMessage.value =
       error instanceof AxiosError
-        ? error.response?.data?.message ??
-          "Não foi possível consultar o Auth Service."
+        ? (error.response?.data?.message ??
+          "Não foi possível consultar o Auth Service.")
         : "Não foi possível consultar o Auth Service.";
   } finally {
     lookingUp.value = false;
@@ -114,14 +116,19 @@ onMounted(async () => {
 
 <template>
   <section class="page-section">
-    <span class="eyebrow">Checkpoint 9</span>
+    <span class="eyebrow">Administração</span>
     <h1>Configurações e acessos</h1>
     <p class="subtitle">Parâmetros operacionais e permissões do inventário.</p>
 
     <Message v-if="message" severity="success" closable @close="message = ''">
       {{ message }}
     </Message>
-    <Message v-if="errorMessage" severity="error" closable @close="errorMessage = ''">
+    <Message
+      v-if="errorMessage"
+      severity="error"
+      closable
+      @close="errorMessage = ''"
+    >
       {{ errorMessage }}
     </Message>
 
@@ -134,14 +141,22 @@ onMounted(async () => {
         </label>
         <label>
           Alerta de capacidade (%)
-          <InputNumber v-model="settings.capacityAlertPercent" :min="1" :max="100" />
+          <InputNumber
+            v-model="settings.capacityAlertPercent"
+            :min="1"
+            :max="100"
+          />
         </label>
         <label>
           Alerta de validade (dias)
           <InputNumber v-model="settings.expirationAlertDays" :min="0" />
         </label>
       </div>
-      <Button label="Salvar configurações" :loading="saving" @click="saveSettings" />
+      <Button
+        label="Salvar configurações"
+        :loading="saving"
+        @click="saveSettings"
+      />
     </section>
 
     <section class="content-card admin-section">
@@ -150,7 +165,10 @@ onMounted(async () => {
         <label>
           Matrícula
           <span class="search-form">
-            <InputText v-model="newUser.registration" @keydown.enter.prevent="findCorporateUser" />
+            <InputText
+              v-model="newUser.registration"
+              @keydown.enter.prevent="findCorporateUser"
+            />
             <Button
               label="Buscar"
               icon="pi pi-search"
@@ -190,7 +208,10 @@ onMounted(async () => {
       <div class="page-heading">
         <h2>Acessos existentes</h2>
         <form class="search-form" @submit.prevent="loadUsers">
-          <InputText v-model="registrationSearch" placeholder="Pesquisar matrícula" />
+          <InputText
+            v-model="registrationSearch"
+            placeholder="Pesquisar matrícula"
+          />
           <Button type="submit" icon="pi pi-search" aria-label="Pesquisar" />
         </form>
       </div>

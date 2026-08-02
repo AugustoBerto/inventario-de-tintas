@@ -13,7 +13,7 @@ const saved = (sample: Sample) => {
 
 <template>
   <section class="page-section">
-    <span class="eyebrow">Checkpoint 3</span>
+    <span class="eyebrow">Cadastro</span>
     <h1>Nova amostra</h1>
     <p class="subtitle">
       A referência será normalizada para maiúsculas e não poderá ser alterada.
