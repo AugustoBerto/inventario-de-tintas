@@ -80,10 +80,9 @@ const expirationOptions = [
   { label: "Vencida", value: "VENCIDA" },
 ];
 const addressOptions = [
-  "SEM_ENDERECO",
-  "CORRETO",
-  "DIVERGENTE",
-  "SEM_RECOMENDACAO",
+  { label: "Endereçado", value: "CORRETO" },
+  { label: "Divergente", value: "DIVERGENTE" },
+  { label: "Sem endereço", value: "SEM_ENDERECO" },
 ];
 const sortOptions = [
   { label: "Referência A–Z", value: "reference:ASC" },
@@ -238,17 +237,83 @@ const executeBatch = async () => {
   }
 };
 
+const vocOptions = [
+  { label: "Solvente", value: "SOLVENTE" },
+  { label: "Base água", value: "BASE_AGUA" },
+];
+
+const showAdvancedFilters = ref(false);
+
+const hasActiveFilters = computed(() =>
+  Boolean(
+    filters.search ||
+      filters.color ||
+      filters.supplier ||
+      filters.brand ||
+      filters.productBase ||
+      filters.substrate ||
+      filters.voc ||
+      filters.paintApplication ||
+      filters.coat ||
+      filters.expirationStatus ||
+      filters.drawerId ||
+      filters.status,
+  ),
+);
+
+const filterBySummary = (type: string) => {
+  if (type === "SEM_ENDERECO") {
+    filters.status = filters.status === "SEM_ENDERECO" ? "" : "SEM_ENDERECO";
+    filters.expirationStatus = "";
+  } else if (type === "PROXIMA") {
+    filters.expirationStatus =
+      filters.expirationStatus === "PROXIMA" ? "" : "PROXIMA";
+    filters.status = "";
+  } else if (type === "VENCIDA") {
+    filters.expirationStatus =
+      filters.expirationStatus === "VENCIDA" ? "" : "VENCIDA";
+    filters.status = "";
+  } else {
+    filters.status = "";
+    filters.expirationStatus = "";
+  }
+  page.value = 1;
+  void applyFilters();
+};
+
 const formatDate = (value: string | null) =>
   value
     ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
         new Date(value),
       )
     : "—";
+
 const formatDateTime = (value: string) =>
   new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
+
+const getExpirationBadgeText = (sample: Sample) => {
+  if (!sample.expiresAt || sample.expirationStatus === "SEM_VALIDADE") {
+    return "Sem validade";
+  }
+  const dateStr = formatDate(sample.expiresAt);
+  if (sample.expirationStatus === "VENCIDA") {
+    return `Vencida (${dateStr})`;
+  }
+  if (sample.expirationStatus === "PROXIMA") {
+    return `A vencer (${dateStr})`;
+  }
+  return `Válida (${dateStr})`;
+};
+
+const getDrawerName = (sample: Sample) => {
+  if (!sample.drawer) return "Sem endereço";
+  const typeName =
+    sample.drawer.type === "BASE_AGUA" ? "Base água" : "Solvente";
+  return `${typeName} ${sample.drawer.number}`;
+};
 
 onMounted(async () => {
   await Promise.all([
@@ -275,16 +340,53 @@ onMounted(async () => {
     </div>
 
     <div class="summary-grid">
-      <article>
+      <article
+        :class="[
+          'interactive-card',
+          { active: !filters.status && !filters.expirationStatus },
+        ]"
+        role="button"
+        tabindex="0"
+        @click="filterBySummary('')"
+      >
         <span>Total</span><strong>{{ counters.total }}</strong>
       </article>
-      <article>
+
+      <article
+        :class="[
+          'interactive-card',
+          { active: filters.status === 'SEM_ENDERECO' },
+        ]"
+        role="button"
+        tabindex="0"
+        @click="filterBySummary('SEM_ENDERECO')"
+      >
         <span>Sem endereço</span><strong>{{ counters.withoutAddress }}</strong>
       </article>
-      <article class="warning">
+
+      <article
+        :class="[
+          'interactive-card',
+          'warning',
+          { active: filters.expirationStatus === 'PROXIMA' },
+        ]"
+        role="button"
+        tabindex="0"
+        @click="filterBySummary('PROXIMA')"
+      >
         <span>Próximas</span><strong>{{ counters.expiring }}</strong>
       </article>
-      <article class="danger">
+
+      <article
+        :class="[
+          'interactive-card',
+          'danger',
+          { active: filters.expirationStatus === 'VENCIDA' },
+        ]"
+        role="button"
+        tabindex="0"
+        @click="filterBySummary('VENCIDA')"
+      >
         <span>Vencidas</span><strong>{{ counters.expired }}</strong>
       </article>
     </div>
@@ -334,52 +436,121 @@ onMounted(async () => {
       </div>
     </div>
 
+    <div v-if="hasActiveFilters" class="active-filters-bar">
+      <span class="active-filters-label">Filtros ativos:</span>
+      <span
+        v-if="filters.search"
+        class="filter-chip"
+        @click="
+          filters.search = '';
+          applyFilters();
+        "
+      >
+        Busca: {{ filters.search }} ✕
+      </span>
+      <span
+        v-if="filters.supplier"
+        class="filter-chip"
+        @click="
+          filters.supplier = '';
+          applyFilters();
+        "
+      >
+        Fornecedor: {{ filters.supplier }} ✕
+      </span>
+      <span
+        v-if="filters.brand"
+        class="filter-chip"
+        @click="
+          filters.brand = '';
+          applyFilters();
+        "
+      >
+        Marca: {{ filters.brand }} ✕
+      </span>
+      <span
+        v-if="filters.color"
+        class="filter-chip"
+        @click="
+          filters.color = '';
+          applyFilters();
+        "
+      >
+        Cor: {{ filters.color }} ✕
+      </span>
+      <span
+        v-if="filters.voc"
+        class="filter-chip"
+        @click="
+          filters.voc = '';
+          applyFilters();
+        "
+      >
+        VOC: {{ filters.voc === 'BASE_AGUA' ? 'Base água' : 'Solvente' }} ✕
+      </span>
+      <span
+        v-if="filters.drawerId"
+        class="filter-chip"
+        @click="
+          filters.drawerId = '';
+          applyFilters();
+        "
+      >
+        Gaveta ✕
+      </span>
+      <span
+        v-if="filters.expirationStatus"
+        class="filter-chip"
+        @click="
+          filters.expirationStatus = '';
+          applyFilters();
+        "
+      >
+        Validade:
+        {{
+          expirationOptions.find((o) => o.value === filters.expirationStatus)
+            ?.label || filters.expirationStatus
+        }}
+        ✕
+      </span>
+      <span
+        v-if="filters.status"
+        class="filter-chip"
+        @click="
+          filters.status = '';
+          applyFilters();
+        "
+      >
+        Endereço:
+        {{
+          addressOptions.find((o) => o.value === filters.status)?.label ||
+          filters.status
+        }}
+        ✕
+      </span>
+      <Button
+        label="Limpar todos"
+        severity="secondary"
+        text
+        size="small"
+        @click="clearFilters"
+      />
+    </div>
+
     <form
       v-if="filtersVisible"
       class="content-card filters-panel"
       @submit.prevent="applyFilters"
     >
-      <InputText v-model="filters.color" placeholder="Cor" />
       <InputText v-model="filters.supplier" placeholder="Fornecedor" />
       <InputText v-model="filters.brand" placeholder="Marca" />
-      <InputText v-model="filters.productBase" placeholder="Base Produto" />
-      <InputText v-model="filters.substrate" placeholder="Substrato" />
+      <InputText v-model="filters.color" placeholder="Cor" />
       <Select
         v-model="filters.voc"
-        :options="['SOLVENTE', 'BASE_AGUA']"
-        placeholder="VOC"
-        show-clear
-      />
-      <InputText v-model="filters.paintApplication" placeholder="Aplicação" />
-      <InputText v-model="filters.coat" placeholder="Demão" />
-      <!-- DESABILITADO: Data da amostra e Fabricação
-      <InputText
-        v-model="filters.sampleDate"
-        type="date"
-        aria-label="Data da amostra"
-      />
-      <InputText
-        v-model="filters.manufacturedAt"
-        type="date"
-        aria-label="Fabricação"
-      />
-      -->
-      <InputText
-        v-model="filters.expiresAt"
-        type="date"
-        aria-label="Validade"
-      />
-      <InputText
-        v-model="filters.createdDate"
-        type="date"
-        aria-label="Cadastro"
-      />
-      <Select
-        v-model="filters.expirationStatus"
-        :options="expirationOptions"
+        :options="vocOptions"
         option-label="label"
         option-value="value"
-        placeholder="Situação da validade"
+        placeholder="Tipo VOC"
         show-clear
       />
       <Select
@@ -391,12 +562,37 @@ onMounted(async () => {
         show-clear
       />
       <Select
+        v-model="filters.expirationStatus"
+        :options="expirationOptions"
+        option-label="label"
+        option-value="value"
+        placeholder="Situação da validade"
+        show-clear
+      />
+      <Select
         v-model="filters.status"
         :options="addressOptions"
+        option-label="label"
+        option-value="value"
         placeholder="Situação do endereço"
         show-clear
       />
+
+      <template v-if="showAdvancedFilters">
+        <InputText v-model="filters.productBase" placeholder="Base Produto" />
+        <InputText v-model="filters.substrate" placeholder="Substrato" />
+        <InputText v-model="filters.paintApplication" placeholder="Aplicação" />
+        <InputText v-model="filters.coat" placeholder="Demão" />
+      </template>
+
       <div class="filter-actions">
+        <Button
+          type="button"
+          :label="showAdvancedFilters ? 'Menos opções' : 'Mais opções'"
+          severity="secondary"
+          text
+          @click="showAdvancedFilters = !showAdvancedFilters"
+        />
         <Button
           type="button"
           label="Limpar"
@@ -413,7 +609,6 @@ onMounted(async () => {
       <Select
         v-model="batchAction"
         :options="[
-          { label: 'Mover para recomendação', value: 'move-to-recommended' },
           { label: 'Mover para gaveta', value: 'move' },
           { label: 'Remover endereço', value: 'remove-address' },
           ...(session.isAdmin
@@ -488,9 +683,16 @@ onMounted(async () => {
                 }}
               </td>
               <td>
-                <span class="status-badge">{{
-                  sample.status.replaceAll("_", " ")
-                }}</span>
+                <template v-if="sample.drawer">
+                  {{ getDrawerName(sample) }}
+                  <span
+                    v-if="sample.status === 'DIVERGENTE'"
+                    class="badge-divergent"
+                  >
+                    ⚠️ Divergente
+                  </span>
+                </template>
+                <span v-else class="text-muted">Sem endereço</span>
               </td>
               <td>
                 <span
@@ -498,8 +700,9 @@ onMounted(async () => {
                     'expiration-badge',
                     sample.expirationStatus.toLowerCase(),
                   ]"
-                  >{{ sample.expirationStatus.replaceAll("_", " ") }}</span
                 >
+                  {{ getExpirationBadgeText(sample) }}
+                </span>
               </td>
             </tr>
           </tbody>
