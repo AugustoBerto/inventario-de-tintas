@@ -6,12 +6,27 @@ import { env } from "../config/env.js";
 const userSchema = z.object({
   id: z.union([z.number(), z.string()]),
   usuario: z.string(),
-  matricula: z.union([z.string(), z.number()]).nullish().transform((value) => value ?? undefined),
+  matricula: z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((value) => value ?? undefined),
   nome: z.string(),
-  setor: z.string().nullish().transform((value) => value ?? undefined),
-  nivel: z.union([z.string(), z.number()]).nullish().transform((value) => value ?? undefined),
-  unidade: z.string().nullish().transform((value) => value ?? undefined),
-  funcao: z.string().nullish().transform((value) => value ?? undefined),
+  setor: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  nivel: z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((value) => value ?? undefined),
+  unidade: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  funcao: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
 });
 
 export const authenticate = (

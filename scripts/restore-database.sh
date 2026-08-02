@@ -47,8 +47,17 @@ docker exec "${container_name}" sh -ceu \
   'pg_restore -U "$POSTGRES_USER" -d "$1" --exit-on-error --no-owner --no-acl "$2"' \
   sh "${target_database}" "${container_dump}"
 docker exec "${container_name}" sh -ceu \
-  'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -c "SELECT COUNT(*) AS migrations FROM migrations"' \
+  'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -c "SELECT COUNT(*) AS migrations FROM amostras_tintas.migrations"' \
   sh "${target_database}"
+schema_table_count="$(
+  docker exec "${container_name}" sh -ceu \
+    'psql -U "$POSTGRES_USER" -d "$1" -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\''amostras_tintas'\'' AND table_name IN ('\''migrations'\'', '\''inventory_settings'\'', '\''drawers'\'', '\''samples'\'', '\''inventory_access_users'\'', '\''sample_movements'\'')"' \
+    sh "${target_database}"
+)"
+if [[ "${schema_table_count}" != "6" ]]; then
+  echo "O schema amostras_tintas não contém todas as tabelas esperadas." >&2
+  exit 1
+fi
 restore_complete=true
 
 echo "Backup restaurado e validado no banco ${target_database}"

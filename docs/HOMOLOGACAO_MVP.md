@@ -8,6 +8,8 @@
 - [ ] `INVENTORY_INITIAL_ADMIN_REGISTRATION` contém a matrícula do administrador inicial.
 - [ ] `INVENTORY_SERVICE` configurado no Gateway.
 - [ ] PostgreSQL acessível.
+- [ ] Schema `amostras_tintas` criado e contendo somente os objetos do Inventory.
+- [ ] Tabela `amostras_tintas.migrations` contém a baseline aplicada.
 - [ ] Backup criado e restauração validada em banco separado.
 - [ ] Migrations aplicadas.
 - [ ] `npm run check` aprovado.

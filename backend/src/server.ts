@@ -7,10 +7,7 @@ const start = async () => {
   await appDataSource.initialize();
   const app = createApp(appDataSource);
   const server = app.listen(env.port, env.host, () => {
-    logger.info(
-      { host: env.host, port: env.port },
-      "inventory_api_started",
-    );
+    logger.info({ host: env.host, port: env.port }, "inventory_api_started");
   });
 
   const shutdown = () => {

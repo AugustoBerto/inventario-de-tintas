@@ -5,10 +5,7 @@ import { InventorySetting } from "../database/entities/InventorySetting.js";
 import type { AuthUser } from "../types/auth.js";
 import { recordMovement } from "./audit.js";
 
-export const drawerSummary = async (
-  manager: EntityManager,
-  drawer: Drawer,
-) => {
+export const drawerSummary = async (manager: EntityManager, drawer: Drawer) => {
   const occupied = await manager.getRepository(Sample).countBy({
     drawerId: drawer.id,
   });
@@ -137,7 +134,9 @@ export const moveSample = async (
     event: fromDrawerId ? "MOVED" : "ADDRESSED",
     fromDrawerId,
     toDrawerId: drawerId,
-    details: divergent ? { divergent: true, reason: sample.divergenceReason } : null,
+    details: divergent
+      ? { divergent: true, reason: sample.divergenceReason }
+      : null,
   });
   return {
     kind: "ok" as const,

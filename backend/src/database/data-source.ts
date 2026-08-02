@@ -6,10 +6,8 @@ import { InventoryAccess } from "./entities/InventoryAccess.js";
 import { InventorySetting } from "./entities/InventorySetting.js";
 import { Sample } from "./entities/Sample.js";
 import { SampleMovement } from "./entities/SampleMovement.js";
-import { CreateInventorySettings1722283200000 } from "./migrations/1722283200000-CreateInventorySettings.js";
-import { CreateSamples1722286800000 } from "./migrations/1722286800000-CreateSamples.js";
-import { CreateDrawersAndAddressing1722290400000 } from "./migrations/1722290400000-CreateDrawersAndAddressing.js";
-import { CreateAccessSettingsAndHistory1722294000000 } from "./migrations/1722294000000-CreateAccessSettingsAndHistory.js";
+import { InitialAmostrasTintas1785542400000 } from "./migrations/1785542400000-InitialAmostrasTintas.js";
+import { INVENTORY_SCHEMA } from "./schema.js";
 
 export const appDataSource = new DataSource({
   type: "postgres",
@@ -19,13 +17,10 @@ export const appDataSource = new DataSource({
   password: env.database.password,
   database: env.database.database,
   ssl: env.database.ssl ? { rejectUnauthorized: false } : false,
+  schema: INVENTORY_SCHEMA,
   synchronize: false,
   logging: false,
+  migrationsTableName: "migrations",
   entities: [InventorySetting, Sample, Drawer, InventoryAccess, SampleMovement],
-  migrations: [
-    CreateInventorySettings1722283200000,
-    CreateSamples1722286800000,
-    CreateDrawersAndAddressing1722290400000,
-    CreateAccessSettingsAndHistory1722294000000,
-  ],
+  migrations: [InitialAmostrasTintas1785542400000],
 });

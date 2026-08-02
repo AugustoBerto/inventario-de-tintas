@@ -47,7 +47,9 @@ export const loadInventoryAccess =
       }
 
       if (!access || !access.active) {
-        res.status(403).json({ message: "Acesso ao inventário não autorizado." });
+        res
+          .status(403)
+          .json({ message: "Acesso ao inventário não autorizado." });
         return;
       }
 
@@ -61,8 +63,13 @@ export const loadInventoryAccess =
 export const authorize =
   (...profiles: InventoryProfile[]) =>
   (req: Request, res: Response, next: NextFunction) => {
-    if (!req.inventoryAccess || !profiles.includes(req.inventoryAccess.profile)) {
-      res.status(403).json({ message: "Você não possui permissão para esta operação." });
+    if (
+      !req.inventoryAccess ||
+      !profiles.includes(req.inventoryAccess.profile)
+    ) {
+      res
+        .status(403)
+        .json({ message: "Você não possui permissão para esta operação." });
       return;
     }
     next();

@@ -51,10 +51,7 @@ export const getSampleMovements = async (id: string) =>
   (await http.get<SampleMovement[]>(`/inventory/samples/${id}/movements`)).data;
 
 export type BatchAction =
-  | "move"
-  | "move-to-recommended"
-  | "remove-address"
-  | "delete";
+  "move" | "move-to-recommended" | "remove-address" | "delete";
 
 export interface BatchResult {
   preview: boolean;

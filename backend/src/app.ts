@@ -24,7 +24,9 @@ export const createApp = (dataSource: DataSource) => {
   app.use("/drawers", createDrawersRouter(dataSource));
   app.use("/settings", createSettingsRouter(dataSource));
   app.use("/access-users", createAccessUsersRouter(dataSource));
-  app.use((_req, res) => res.status(404).json({ message: "Rota não encontrada." }));
+  app.use((_req, res) =>
+    res.status(404).json({ message: "Rota não encontrada." }),
+  );
   app.use(errorHandler);
 
   return app;

@@ -55,7 +55,9 @@ describe("session", () => {
   });
 
   it("rejeita acesso sem cookie", async () => {
-    const response = await request(createApp(createDataSource())).get("/session");
+    const response = await request(createApp(createDataSource())).get(
+      "/session",
+    );
 
     expect(response.status).toBe(401);
   });

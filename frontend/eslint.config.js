@@ -10,10 +10,12 @@ export default tseslint.config(
   {
     files: ["**/*.vue"],
     languageOptions: {
+      globals: {
+        window: "readonly",
+      },
       parserOptions: {
         parser: tseslint.parser,
       },
     },
   },
 );
-

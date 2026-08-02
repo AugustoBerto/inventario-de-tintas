@@ -17,7 +17,8 @@ export const listAccessUsers = async (registration = "") =>
 export const createAccessUser = async (values: {
   registration: string;
   profile: InventoryAccess["profile"];
-}) => (await http.post<InventoryAccess>("/inventory/access-users", values)).data;
+}) =>
+  (await http.post<InventoryAccess>("/inventory/access-users", values)).data;
 
 export interface CorporateUserLookup {
   registration: string;
@@ -37,6 +38,5 @@ export const updateAccessUser = async (
   id: string,
   values: Partial<Pick<InventoryAccess, "profile" | "active">>,
 ) =>
-  (
-    await http.patch<InventoryAccess>(`/inventory/access-users/${id}`, values)
-  ).data;
+  (await http.patch<InventoryAccess>(`/inventory/access-users/${id}`, values))
+    .data;

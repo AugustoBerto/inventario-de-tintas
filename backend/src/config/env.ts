@@ -9,11 +9,12 @@ const booleanFromString = z
   .transform((value) => value === "true");
 
 const schema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   HOST: z.string().default("localhost"),
   PORT: z.coerce.number().int().positive().default(3050),
   LOG_LEVEL: z.string().default("info"),
-  CORS_ORIGINS: z.string().default("http://localhost:5173"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET é obrigatório"),
   AUTH_SERVICE_URL: z.string().url().default("http://localhost:2400"),
   INVENTORY_INITIAL_ADMIN_REGISTRATION: z.string().trim().optional(),
@@ -40,7 +41,6 @@ export const env = {
   host: values.HOST,
   port: values.PORT,
   logLevel: values.LOG_LEVEL,
-  corsOrigins: values.CORS_ORIGINS.split(",").map((origin) => origin.trim()),
   jwtSecret: values.JWT_SECRET,
   authServiceUrl: values.AUTH_SERVICE_URL.replace(/\/$/, ""),
   initialAdminRegistration: values.INVENTORY_INITIAL_ADMIN_REGISTRATION,

@@ -23,4 +23,3 @@ export const createHealthRouter = (dataSource: DataSource) => {
 
   return router;
 };
-

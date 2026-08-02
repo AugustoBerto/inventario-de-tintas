@@ -20,4 +20,3 @@ export interface AuthResponse {
     setor?: string;
   };
 }
-

@@ -58,7 +58,7 @@ const move = () => {
     return;
   }
   const reason = divergent
-    ? window.prompt("Motivo da divergência (opcional):") ?? undefined
+    ? (window.prompt("Motivo da divergência (opcional):") ?? undefined)
     : undefined;
   void run(() =>
     moveSample(
@@ -119,10 +119,11 @@ onMounted(async () => {
     <div class="address-actions">
       <Button
         v-if="
-          sample.recommendation &&
-          sample.drawerId !== sample.recommendation.id
+          sample.recommendation && sample.drawerId !== sample.recommendation.id
         "
-        :label="sample.drawerId ? 'Mover para recomendação' : 'Usar recomendação'"
+        :label="
+          sample.drawerId ? 'Mover para recomendação' : 'Usar recomendação'
+        "
         icon="pi pi-map-marker"
         :loading="loading"
         :disabled="sample.recommendation.available === 0"

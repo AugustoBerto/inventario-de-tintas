@@ -7,4 +7,3 @@ test("exibe o acesso corporativo", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByLabel("Usuário")).toBeVisible();
 });
-

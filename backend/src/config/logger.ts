@@ -5,4 +5,3 @@ export const logger = pino({
   level: env.logLevel,
   redact: ["req.headers.authorization", "req.headers.cookie"],
 });
-

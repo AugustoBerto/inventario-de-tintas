@@ -8,4 +8,3 @@ export interface AuthUser {
   unidade?: string;
   funcao?: string;
 }
-

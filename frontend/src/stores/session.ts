@@ -19,13 +19,16 @@ export const useSessionStore = defineStore("session", () => {
   const accessMessage = ref("");
   const authenticated = computed(() => user.value !== null);
   const canWrite = computed(
-    () => access.value?.profile === "ADMIN" || access.value?.profile === "OPERATOR",
+    () =>
+      access.value?.profile === "ADMIN" || access.value?.profile === "OPERATOR",
   );
   const isAdmin = computed(() => access.value?.profile === "ADMIN");
 
   const loadInventoryAccess = async () => {
     try {
-      const { data } = await http.get<{ access: InventoryAccess }>("/inventory/session");
+      const { data } = await http.get<{ access: InventoryAccess }>(
+        "/inventory/session",
+      );
       access.value = data.access;
       accessDenied.value = false;
       accessMessage.value = "";

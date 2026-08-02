@@ -4,7 +4,10 @@ import { z } from "zod";
 import { Drawer } from "../database/entities/Drawer.js";
 import { InventorySetting } from "../database/entities/InventorySetting.js";
 import { authenticate } from "../middleware/authenticate.js";
-import { authorize, loadInventoryAccess } from "../middleware/inventory-access.js";
+import {
+  authorize,
+  loadInventoryAccess,
+} from "../middleware/inventory-access.js";
 
 const settingsSchema = z.object({
   defaultDrawerCapacity: z.number().int().min(1).max(10000),
@@ -13,11 +16,13 @@ const settingsSchema = z.object({
 });
 
 const readSettings = async (dataSource: DataSource) => {
-  const rows = await dataSource.getRepository(InventorySetting).findBy([
-    { key: "defaultDrawerCapacity" },
-    { key: "capacityAlertPercent" },
-    { key: "expirationAlertDays" },
-  ]);
+  const rows = await dataSource
+    .getRepository(InventorySetting)
+    .findBy([
+      { key: "defaultDrawerCapacity" },
+      { key: "capacityAlertPercent" },
+      { key: "expirationAlertDays" },
+    ]);
   const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
   return {
     defaultDrawerCapacity: Number(values.defaultDrawerCapacity ?? 100),

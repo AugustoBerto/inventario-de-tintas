@@ -42,8 +42,8 @@ const submit = handleSubmit(async (values) => {
         ? session.accessMessage ||
           "Seu usuário corporativo não possui acesso ao inventário."
         : error instanceof AxiosError && error.response?.status === 401
-        ? "Usuário ou senha incorretos."
-        : "A autenticação está temporariamente indisponível. Tente novamente.";
+          ? "Usuário ou senha incorretos."
+          : "A autenticação está temporariamente indisponível. Tente novamente.";
   }
 });
 </script>

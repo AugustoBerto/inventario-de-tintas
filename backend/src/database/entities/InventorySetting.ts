@@ -1,6 +1,7 @@
 import { Column, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { INVENTORY_SCHEMA } from "../schema.js";
 
-@Entity({ name: "inventory_settings" })
+@Entity({ schema: INVENTORY_SCHEMA, name: "inventory_settings" })
 export class InventorySetting {
   @PrimaryColumn({ type: "varchar", length: 100 })
   key!: string;
@@ -11,4 +12,3 @@ export class InventorySetting {
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt!: Date;
 }
-

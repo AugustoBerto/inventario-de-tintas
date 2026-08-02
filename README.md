@@ -22,6 +22,10 @@ npm run dev
 O Inventory usa apenas as próprias variáveis de ambiente. Defina diretamente o
 mesmo `JWT_SECRET` do Auth Service e as credenciais `DATABASE_*`.
 
+Todos os objetos do Inventory, inclusive o histórico de migrations, ficam no
+schema PostgreSQL `amostras_tintas`. O usuário configurado em `DATABASE_USER`
+precisa ter permissão para criar esse schema na primeira instalação.
+
 ## Endereços locais
 
 - Frontend: `http://localhost:5173`
@@ -43,6 +47,9 @@ npm run build
 # Aplicar migrations pendentes
 npm run migration:run
 
+# Reverter a última migration
+npm run migration:revert
+
 # Gerar backup
 npm run db:backup -- /tmp/inventory.dump
 
@@ -54,7 +61,9 @@ npm run build
 pm2 start ecosystem.config.cjs
 ```
 
-A restauração sobre o banco ativo é bloqueada pelo script.
+A restauração sobre o banco ativo é bloqueada pelo script. O backup abrange o
+banco completo e a restauração confirma as seis tabelas esperadas no schema
+`amostras_tintas`.
 
 ## Documentação
 

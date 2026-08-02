@@ -4,4 +4,3 @@ config.global.stubs = {
   RouterLink: true,
   RouterView: true,
 };
-

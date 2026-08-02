@@ -10,8 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "eslint src test",
-    "migration:run": "typeorm-ts-node-esm migration:run -d src/database/data-source.ts",
-    "migration:revert": "typeorm-ts-node-esm migration:revert -d src/database/data-source.ts"
+    "migration:run": "tsx src/database/migration-runner.ts run",
+    "migration:revert": "tsx src/database/migration-runner.ts revert"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

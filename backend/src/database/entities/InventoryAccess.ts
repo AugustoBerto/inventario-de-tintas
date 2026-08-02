@@ -5,15 +5,21 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { INVENTORY_SCHEMA } from "../schema.js";
 
 export type InventoryProfile = "ADMIN" | "OPERATOR" | "VIEWER";
 
-@Entity({ name: "inventory_access_users" })
+@Entity({ schema: INVENTORY_SCHEMA, name: "inventory_access_users" })
 export class InventoryAccess {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ type: "varchar", name: "corporate_user_id", length: 100, unique: true })
+  @Column({
+    type: "varchar",
+    name: "corporate_user_id",
+    length: 100,
+    unique: true,
+  })
   corporateUserId!: string;
 
   @Column({ type: "varchar", length: 100, nullable: true, unique: true })

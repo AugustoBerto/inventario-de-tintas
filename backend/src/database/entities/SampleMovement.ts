@@ -4,8 +4,9 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from "typeorm";
+import { INVENTORY_SCHEMA } from "../schema.js";
 
-@Entity({ name: "sample_movements" })
+@Entity({ schema: INVENTORY_SCHEMA, name: "sample_movements" })
 export class SampleMovement {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
@@ -31,7 +32,12 @@ export class SampleMovement {
   @Column({ type: "varchar", name: "actor_id", length: 100 })
   actorId!: string;
 
-  @Column({ type: "varchar", name: "actor_registration", length: 100, nullable: true })
+  @Column({
+    type: "varchar",
+    name: "actor_registration",
+    length: 100,
+    nullable: true,
+  })
   actorRegistration!: string | null;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })

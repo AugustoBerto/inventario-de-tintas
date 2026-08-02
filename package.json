@@ -14,6 +14,7 @@
     "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
     "format:check": "prettier --check .",
     "migration:run": "npm run migration:run --workspace backend",
+    "migration:revert": "npm run migration:revert --workspace backend",
     "db:backup": "bash scripts/backup-database.sh",
     "db:restore": "bash scripts/restore-database.sh",
     "check": "npm run typecheck && npm test"

@@ -12,7 +12,9 @@ export const createDrawersRouter = (dataSource: DataSource) => {
 
   router.get("/", async (_req, res, next) => {
     try {
-      const drawers = await repository.find({ order: { type: "DESC", number: "ASC" } });
+      const drawers = await repository.find({
+        order: { type: "DESC", number: "ASC" },
+      });
       res.json(
         await Promise.all(
           drawers.map((drawer) => drawerSummary(dataSource.manager, drawer)),
