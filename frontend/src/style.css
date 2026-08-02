@@ -665,6 +665,57 @@ h1 {
   justify-content: center;
 }
 
+/* Confirm modal styles */
+.confirm-modal-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.confirm-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.confirm-icon-wrapper.danger {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.confirm-icon-wrapper.warn {
+  background: #fffbebfb;
+  color: #f59e0b;
+}
+
+.confirm-icon-wrapper.info {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.confirm-icon-wrapper i {
+  font-size: 1.35rem;
+}
+
+.confirm-message {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .drawer-samples-section {
   display: flex;
   flex-direction: column;

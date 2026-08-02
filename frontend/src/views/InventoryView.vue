@@ -9,6 +9,7 @@ import ProgressSpinner from "primevue/progressspinner";
 import Select from "primevue/select";
 import SampleAddressing from "@/components/SampleAddressing.vue";
 import SampleForm from "@/components/SampleForm.vue";
+import AppConfirmModal from "@/components/AppConfirmModal.vue";
 import {
   getSample,
   getSampleMovements,
@@ -41,6 +42,11 @@ const batchLoading = ref(false);
 const errorMessage = ref("");
 const resultMessage = ref("");
 const batchResultDetails = ref("");
+const confirmModalVisible = ref(false);
+const confirmModalTitle = ref("Confirmação de Ação em Lote");
+const confirmModalMessage = ref("");
+const confirmModalSeverity = ref<"info" | "warn" | "danger">("info");
+const confirmModalConfirmLabel = ref("Confirmar");
 const page = ref(Number(route.query.page) || 1);
 const limit = 10;
 const total = ref(0);
@@ -191,6 +197,7 @@ const togglePage = () => {
 };
 
 const executeBatch = async () => {
+  errorMessage.value = "";
   if (!selectedIds.value.length) return;
   if (batchAction.value === "move" && !batchDrawerId.value) {
     errorMessage.value = "Selecione a gaveta de destino.";
@@ -206,13 +213,37 @@ const executeBatch = async () => {
     );
     const valid = preview.results.filter((item) => item.success).length;
     const ignored = preview.results.length - valid;
-    const confirmation =
-      batchAction.value === "delete"
-        ? `ATENÇÃO: ${valid} amostra(s) serão excluídas definitivamente. Esta operação não pode ser desfeita. Confirmar?`
-        : `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Confirmar?`;
-    if (!valid || !window.confirm(confirmation)) {
+
+    if (!valid) {
+      errorMessage.value =
+        "Nenhum dos itens selecionados pode ser processado nesta ação.";
       return;
     }
+
+    confirmModalTitle.value =
+      batchAction.value === "delete"
+        ? "Excluir Amostras"
+        : "Confirmar Ação em Lote";
+    confirmModalMessage.value =
+      batchAction.value === "delete"
+        ? `ATENÇÃO: ${valid} amostra(s) serão excluídas definitivamente. Esta operação não pode ser desfeita.`
+        : `Prévia: ${valid} item(ns) serão processados e ${ignored} ignorado(s). Deseja continuar?`;
+    confirmModalSeverity.value =
+      batchAction.value === "delete" ? "danger" : "info";
+    confirmModalConfirmLabel.value =
+      batchAction.value === "delete" ? "Excluir" : "Processar";
+    confirmModalVisible.value = true;
+  } catch {
+    errorMessage.value = "Não foi possível executar a ação em lote.";
+  } finally {
+    batchLoading.value = false;
+  }
+};
+
+const confirmExecuteBatch = async () => {
+  confirmModalVisible.value = false;
+  batchLoading.value = true;
+  try {
     const result = await runBatch(
       batchAction.value,
       selectedIds.value,
@@ -800,5 +831,15 @@ onMounted(async () => {
         </div>
       </template>
     </Drawer>
+
+    <AppConfirmModal
+      v-model:visible="confirmModalVisible"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      :severity="confirmModalSeverity"
+      :confirm-label="confirmModalConfirmLabel"
+      :loading="batchLoading"
+      @confirm="confirmExecuteBatch"
+    />
   </section>
 </template>
