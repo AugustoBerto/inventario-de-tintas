@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { AxiosError } from "axios";
 import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";
@@ -10,8 +10,8 @@ import Message from "primevue/message";
 import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import Textarea from "primevue/textarea";
-import { createSample, updateSample } from "@/services/samples";
-import type { Sample, SampleInput } from "@/types/sample";
+import { createSample, listDrawers, updateSample } from "@/services/samples";
+import type { DrawerSummary, Sample, SampleInput } from "@/types/sample";
 
 const props = defineProps<{ sample?: Sample | null }>();
 const emit = defineEmits<{ saved: [sample: Sample] }>();
@@ -21,7 +21,6 @@ const schema = toTypedSchema(
   z
     .object({
       reference: z.string().trim().min(1, "Informe a referência.").max(80),
-      addressRecommended: z.boolean().default(false),
       /* DESABILITADO: Data da amostra / Fabricação
       sampleDate: z.string().optional(),
       manufacturedAt: z.string().optional(),
@@ -37,23 +36,10 @@ const schema = toTypedSchema(
       coat: optionalText(40),
       notes: optionalText(4000),
     }),
-    /* DESABILITADO: Validação entre fabricação e validade
-    .refine(
-      (values) =>
-        !values.manufacturedAt ||
-        !values.expiresAt ||
-        values.expiresAt >= values.manufacturedAt,
-      {
-        path: ["expiresAt"],
-        message: "A validade não pode ser anterior à fabricação.",
-      },
-    ),
-    */
 );
 
 const initialValues = (sample?: Sample | null) => ({
   reference: sample?.reference ?? "",
-  addressRecommended: false,
   /* DESABILITADO: Data da amostra / Fabricação
   sampleDate: sample?.sampleDate ?? "",
   manufacturedAt: sample?.manufacturedAt ?? "",
@@ -84,7 +70,6 @@ const {
 });
 
 const [reference] = defineField("reference");
-const [addressRecommended] = defineField("addressRecommended");
 /* DESABILITADO: Data da amostra / Fabricação
 const [sampleDate] = defineField("sampleDate");
 const [manufacturedAt] = defineField("manufacturedAt");
@@ -102,10 +87,30 @@ const [notes] = defineField("notes");
 
 const editing = computed(() => Boolean(props.sample));
 const keepValues = ref(false);
+const drawers = ref<DrawerSummary[]>([]);
+const drawerId = ref<string>("");
+
 const vocOptions = [
   { label: "Solvente", value: "SOLVENTE" },
   { label: "Base água", value: "BASE_AGUA" },
 ];
+
+const drawerOptions = computed(() => [
+  { label: "Endereçamento automático (Gaveta recomendada)", value: "" },
+  ...drawers.value.map((drawer) => ({
+    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number} (${drawer.occupied}/${drawer.capacity})`,
+    value: drawer.id,
+    disabled: drawer.available === 0,
+  })),
+]);
+
+onMounted(async () => {
+  try {
+    drawers.value = await listDrawers();
+  } catch {
+    // A lista de gavetas é opcional no formulário
+  }
+});
 
 watch(
   () => props.sample,
@@ -119,6 +124,7 @@ const submit = handleSubmit(async (values) => {
       ...values,
       reference: editing.value ? undefined : values.reference,
       voc: values.voc ?? undefined,
+      drawerId: drawerId.value || undefined,
     };
     const saved =
       editing.value && props.sample
@@ -126,6 +132,7 @@ const submit = handleSubmit(async (values) => {
         : await createSample(payload);
     emit("saved", saved);
     if (!editing.value) {
+      drawerId.value = "";
       resetForm({
         values: keepValues.value
           ? { ...values, reference: "" }
@@ -233,14 +240,17 @@ const submit = handleSubmit(async (values) => {
       <Textarea id="notes" v-model="notes" rows="4" />
     </div>
 
-    <div v-if="!editing" class="keep-values form-field-wide">
-      <ToggleSwitch
-        v-model="addressRecommended"
-        input-id="address-recommended"
+    <div v-if="!editing" class="form-field form-field-wide">
+      <label for="drawer-id">Gaveta de destino</label>
+      <Select
+        id="drawer-id"
+        v-model="drawerId"
+        :options="drawerOptions"
+        option-label="label"
+        option-value="value"
+        option-disabled="disabled"
+        placeholder="Endereçamento automático (Recomendado)"
       />
-      <label for="address-recommended">
-        Endereçar na gaveta recomendada quando houver espaço
-      </label>
     </div>
 
     <div v-if="!editing" class="keep-values form-field-wide">

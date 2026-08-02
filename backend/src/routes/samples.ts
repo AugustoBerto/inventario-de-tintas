@@ -83,7 +83,8 @@ const createSampleSchema = sampleInputSchema.and(
       .min(1, "Informe a referência.")
       .max(80)
       .transform((value) => value.toUpperCase()),
-    addressRecommended: z.boolean().default(false),
+    drawerId: z.string().uuid().optional().nullable(),
+    addressRecommended: z.boolean().default(true),
   }),
 );
 const updateSampleSchema = sampleFieldsSchema
@@ -312,7 +313,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
 
     try {
       const saved = await dataSource.transaction(async (manager) => {
-        const { addressRecommended, ...values } = parsed.data;
+        const { addressRecommended, drawerId, ...values } = parsed.data;
         const transactionRepository = manager.getRepository(Sample);
         const sample = await transactionRepository.save(
           transactionRepository.create({
@@ -325,7 +326,19 @@ export const createSamplesRouter = (dataSource: DataSource) => {
           sampleReference: sample.reference,
           event: "CREATED",
         });
-        if (addressRecommended) {
+
+        // Se uma gaveta foi selecionada explicitamente no cadastro, endereça nela
+        if (drawerId) {
+          const result = await moveSample(
+            manager,
+            sample.id,
+            drawerId,
+            true,
+            req.authUser!,
+          );
+          if (result.kind === "ok") return result.sample;
+        } else {
+          // Caso contrário, tenta endereçamento automático na gaveta recomendada por padrão
           const recommendation = await recommendedDrawer(manager, sample);
           if (recommendation?.available) {
             const result = await moveSample(
@@ -338,6 +351,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
             if (result.kind === "ok") return result.sample;
           }
         }
+
         return sampleWithAddress(manager, sample);
       });
       res.status(201).json(saved);
@@ -501,14 +515,6 @@ export const createSamplesRouter = (dataSource: DataSource) => {
             parsed.data.reason,
           ),
         );
-        if (result.kind === "confirmation-required") {
-          res.status(409).json({
-            message: "O endereço escolhido difere da recomendação.",
-            requiresConfirmation: true,
-            recommendation: result.recommendation,
-          });
-          return;
-        }
         if (result.kind === "full") {
           res
             .status(409)

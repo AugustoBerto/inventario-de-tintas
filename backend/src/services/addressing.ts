@@ -115,9 +115,6 @@ export const moveSample = async (
 
   const recommendation = await recommendedDrawer(manager, sample);
   const divergent = Boolean(recommendation && recommendation.id !== drawerId);
-  if (divergent && !confirmDivergence) {
-    return { kind: "confirmation-required" as const, recommendation };
-  }
 
   const fromDrawerId = sample.drawerId;
   sample.drawerId = drawerId;

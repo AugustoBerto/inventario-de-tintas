@@ -21,7 +21,7 @@ const errorMessage = ref("");
 
 const drawerOptions = computed(() =>
   drawers.value.map((drawer) => ({
-    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number} — ${drawer.occupied}/${drawer.capacity}`,
+    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number} (${drawer.occupied}/${drawer.capacity})`,
     value: drawer.id,
     disabled: drawer.available === 0 && drawer.id !== props.sample.drawerId,
   })),
@@ -46,28 +46,7 @@ const run = async (operation: () => Promise<Sample>) => {
 
 const move = () => {
   if (!destinationId.value) return;
-  const divergent =
-    props.sample.recommendation &&
-    props.sample.recommendation.id !== destinationId.value;
-  if (
-    divergent &&
-    !window.confirm(
-      "A gaveta selecionada difere da recomendação. Deseja continuar?",
-    )
-  ) {
-    return;
-  }
-  const reason = divergent
-    ? (window.prompt("Motivo da divergência (opcional):") ?? undefined)
-    : undefined;
-  void run(() =>
-    moveSample(
-      props.sample.id,
-      destinationId.value!,
-      Boolean(divergent),
-      reason,
-    ),
-  );
+  void run(() => moveSample(props.sample.id, destinationId.value!, true));
 };
 
 onMounted(async () => {
@@ -92,27 +71,11 @@ onMounted(async () => {
         <strong v-if="sample.drawer">
           {{ sample.drawer.type === "BASE_AGUA" ? "Base água" : "Solvente" }}
           {{ sample.drawer.number }}
+          <span v-if="sample.status === 'DIVERGENTE'" class="badge-divergent">
+            ⚠️ Divergente
+          </span>
         </strong>
         <strong v-else>Sem endereço</strong>
-      </div>
-      <div>
-        <span>Recomendação</span>
-        <strong v-if="sample.recommendation">
-          {{
-            sample.recommendation.type === "BASE_AGUA"
-              ? "Base água"
-              : "Solvente"
-          }}
-          {{ sample.recommendation.number }}
-          ({{ sample.recommendation.occupied }}/{{
-            sample.recommendation.capacity
-          }})
-        </strong>
-        <strong v-else>Sem recomendação</strong>
-      </div>
-      <div>
-        <span>Situação</span>
-        <strong>{{ sample.status.replaceAll("_", " ") }}</strong>
       </div>
     </div>
 
@@ -122,7 +85,7 @@ onMounted(async () => {
           sample.recommendation && sample.drawerId !== sample.recommendation.id
         "
         :label="
-          sample.drawerId ? 'Mover para recomendação' : 'Usar recomendação'
+          sample.drawerId ? 'Mover para recomendada' : 'Usar gaveta recomendada'
         "
         icon="pi pi-map-marker"
         :loading="loading"
@@ -158,9 +121,5 @@ onMounted(async () => {
         @click="move"
       />
     </div>
-
-    <small v-if="sample.divergenceReason">
-      Motivo da divergência: {{ sample.divergenceReason }}
-    </small>
   </section>
 </template>
