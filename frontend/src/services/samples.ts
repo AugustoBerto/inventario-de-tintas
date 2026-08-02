@@ -27,6 +27,9 @@ export const updateSample = async (id: string, values: SampleInput) =>
 export const listDrawers = async () =>
   (await http.get<DrawerSummary[]>("/inventory/drawers")).data;
 
+export const updateDrawerCapacity = async (id: string, capacity: number) =>
+  (await http.patch<DrawerSummary>(`/inventory/drawers/${id}`, { capacity })).data;
+
 export const addressSample = async (id: string) =>
   (await http.post<Sample>(`/inventory/samples/${id}/address`)).data;
 

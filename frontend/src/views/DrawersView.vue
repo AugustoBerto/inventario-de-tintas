@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from "vue";
 import Button from "primevue/button";
 import Drawer from "primevue/drawer";
+import InputNumber from "primevue/inputnumber";
 import Message from "primevue/message";
 import ProgressBar from "primevue/progressbar";
 import ProgressSpinner from "primevue/progressspinner";
-import { listDrawers, listSamples } from "@/services/samples";
+import { listDrawers, listSamples, updateDrawerCapacity } from "@/services/samples";
 import { getSettings } from "@/services/admin";
 import type { DrawerSummary, Sample } from "@/types/sample";
 
@@ -13,12 +14,19 @@ const drawers = ref<DrawerSummary[]>([]);
 const loading = ref(true);
 const errorMessage = ref("");
 const alertPercent = ref(80);
+const maxCapacityLimit = ref(100);
 
 const selectedDrawer = ref<DrawerSummary | null>(null);
 const detailVisible = ref(false);
 const drawerSamples = ref<Sample[]>([]);
 const loadingSamples = ref(false);
 const samplesError = ref("");
+
+const editingCapacity = ref(false);
+const newCapacityInput = ref(0);
+const savingCapacity = ref(false);
+const capacityMessage = ref("");
+const capacityError = ref("");
 
 const solvent = computed(() =>
   drawers.value.filter((item) => item.type === "SOLVENTE"),
@@ -39,6 +47,10 @@ const load = async () => {
 
 const openDrawer = async (drawer: DrawerSummary) => {
   selectedDrawer.value = drawer;
+  newCapacityInput.value = drawer.capacity;
+  editingCapacity.value = false;
+  capacityMessage.value = "";
+  capacityError.value = "";
   detailVisible.value = true;
   loadingSamples.value = true;
   samplesError.value = "";
@@ -52,10 +64,37 @@ const openDrawer = async (drawer: DrawerSummary) => {
   }
 };
 
+const saveDrawerCapacity = async () => {
+  if (!selectedDrawer.value) return;
+  savingCapacity.value = true;
+  capacityError.value = "";
+  capacityMessage.value = "";
+  try {
+    const updated = await updateDrawerCapacity(
+      selectedDrawer.value.id,
+      newCapacityInput.value,
+    );
+    selectedDrawer.value = updated;
+    const idx = drawers.value.findIndex((d) => d.id === updated.id);
+    if (idx !== -1) {
+      drawers.value[idx] = updated;
+    }
+    capacityMessage.value = "Capacidade atualizada com sucesso.";
+    editingCapacity.value = false;
+  } catch (err: any) {
+    capacityError.value =
+      err?.response?.data?.message ?? "Não foi possível atualizar a capacidade.";
+  } finally {
+    savingCapacity.value = false;
+  }
+};
+
 onMounted(load);
 onMounted(async () => {
   try {
-    alertPercent.value = (await getSettings()).capacityAlertPercent;
+    const settings = await getSettings();
+    alertPercent.value = settings.capacityAlertPercent;
+    maxCapacityLimit.value = settings.maxDrawerCapacity;
   } catch {
     // A ocupação continua disponível mesmo sem a configuração.
   }
@@ -179,6 +218,52 @@ onMounted(async () => {
                 <ProgressBar
                   :value="(selectedDrawer.occupied / selectedDrawer.capacity) * 100"
                 />
+              </div>
+
+              <div class="capacity-edit-section">
+                <div v-if="!editingCapacity" class="capacity-view-row">
+                  <Button
+                    label="Alterar capacidade desta gaveta"
+                    icon="pi pi-pencil"
+                    severity="secondary"
+                    text
+                    size="small"
+                    @click="editingCapacity = true"
+                  />
+                </div>
+                <div v-else class="capacity-form-row">
+                  <label class="capacity-input-label">
+                    Nova capacidade:
+                    <InputNumber
+                      v-model="newCapacityInput"
+                      :min="1"
+                      :max="maxCapacityLimit"
+                    />
+                  </label>
+                  <div class="capacity-actions">
+                    <Button
+                      label="Salvar"
+                      icon="pi pi-check"
+                      size="small"
+                      :loading="savingCapacity"
+                      @click="saveDrawerCapacity"
+                    />
+                    <Button
+                      label="Cancelar"
+                      icon="pi pi-times"
+                      severity="secondary"
+                      text
+                      size="small"
+                      @click="editingCapacity = false"
+                    />
+                  </div>
+                </div>
+                <Message v-if="capacityMessage" severity="success" closable @close="capacityMessage = ''">
+                  {{ capacityMessage }}
+                </Message>
+                <Message v-if="capacityError" severity="error" closable @close="capacityError = ''">
+                  {{ capacityError }}
+                </Message>
               </div>
 
               <RouterLink

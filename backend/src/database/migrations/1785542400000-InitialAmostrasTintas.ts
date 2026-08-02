@@ -107,7 +107,8 @@ export class InitialAmostrasTintas1785542400000 implements MigrationInterface {
       INSERT INTO ${schema}."inventory_settings" ("key", "value")
       VALUES
         ('foundation', '{"version":"0.2.0"}'::jsonb),
-        ('defaultDrawerCapacity', '100'::jsonb),
+        ('defaultDrawerCapacity', '30'::jsonb),
+        ('maxDrawerCapacity', '100'::jsonb),
         ('capacityAlertPercent', '80'::jsonb),
         ('expirationAlertDays', '30'::jsonb)
     `);

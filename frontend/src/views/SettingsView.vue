@@ -19,7 +19,8 @@ import type { CorporateUserLookup } from "@/services/admin";
 import type { InventoryAccess, InventorySettings } from "@/types/sample";
 
 const settings = reactive<InventorySettings>({
-  defaultDrawerCapacity: 100,
+  defaultDrawerCapacity: 30,
+  maxDrawerCapacity: 100,
   capacityAlertPercent: 80,
   expirationAlertDays: 30,
 });
@@ -138,6 +139,10 @@ onMounted(async () => {
         <label>
           Capacidade padrão
           <InputNumber v-model="settings.defaultDrawerCapacity" :min="1" />
+        </label>
+        <label>
+          Capacidade máxima
+          <InputNumber v-model="settings.maxDrawerCapacity" :min="1" />
         </label>
         <label>
           Alerta de capacidade (%)

@@ -11,6 +11,7 @@ import {
 
 const settingsSchema = z.object({
   defaultDrawerCapacity: z.number().int().min(1).max(10000),
+  maxDrawerCapacity: z.number().int().min(1).max(10000),
   capacityAlertPercent: z.number().int().min(1).max(100),
   expirationAlertDays: z.number().int().min(0).max(3650),
 });
@@ -20,12 +21,14 @@ const readSettings = async (dataSource: DataSource) => {
     .getRepository(InventorySetting)
     .findBy([
       { key: "defaultDrawerCapacity" },
+      { key: "maxDrawerCapacity" },
       { key: "capacityAlertPercent" },
       { key: "expirationAlertDays" },
     ]);
   const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
   return {
-    defaultDrawerCapacity: Number(values.defaultDrawerCapacity ?? 100),
+    defaultDrawerCapacity: Number(values.defaultDrawerCapacity ?? 30),
+    maxDrawerCapacity: Number(values.maxDrawerCapacity ?? 100),
     capacityAlertPercent: Number(values.capacityAlertPercent ?? 80),
     expirationAlertDays: Number(values.expirationAlertDays ?? 30),
   };
@@ -55,11 +58,6 @@ export const createSettingsRouter = (dataSource: DataSource) => {
         for (const [key, value] of Object.entries(parsed.data)) {
           await repository.save(repository.create({ key, value }));
         }
-        await manager
-          .createQueryBuilder()
-          .update(Drawer)
-          .set({ capacity: parsed.data.defaultDrawerCapacity })
-          .execute();
       });
       res.json(parsed.data);
     } catch (error) {

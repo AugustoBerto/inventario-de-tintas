@@ -29,6 +29,7 @@ export interface Sample {
 
 export interface SampleInput {
   reference?: string;
+  drawerId?: string;
   addressRecommended?: boolean;
   /* DESABILITADO: Data da amostra / Fabricação
   sampleDate?: string;
@@ -121,6 +122,7 @@ export interface InventoryAccess {
 
 export interface InventorySettings {
   defaultDrawerCapacity: number;
+  maxDrawerCapacity: number;
   capacityAlertPercent: number;
   expirationAlertDays: number;
 }
