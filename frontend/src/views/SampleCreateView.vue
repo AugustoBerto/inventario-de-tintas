@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Message from "primevue/message";
 import SampleForm from "@/components/SampleForm.vue";
+import SampleSuccessPopup from "@/components/SampleSuccessPopup.vue";
 import type { Sample } from "@/types/sample";
 
-const savedReference = ref("");
+const latestSavedSample = ref<Sample | null>(null);
 
 const saved = (sample: Sample) => {
-  savedReference.value = sample.reference;
+  latestSavedSample.value = sample;
 };
 </script>
 
@@ -18,9 +18,12 @@ const saved = (sample: Sample) => {
     <p class="subtitle">
       A referência será normalizada para maiúsculas e não poderá ser alterada.
     </p>
-    <Message v-if="savedReference" severity="success">
-      Amostra {{ savedReference }} cadastrada.
-    </Message>
+
+    <SampleSuccessPopup
+      :sample="latestSavedSample"
+      @close="latestSavedSample = null"
+    />
+
     <div class="content-card">
       <SampleForm @saved="saved" />
     </div>
