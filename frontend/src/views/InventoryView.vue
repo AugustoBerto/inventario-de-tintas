@@ -25,6 +25,7 @@ import type {
   SampleFilters,
   SampleMovement,
 } from "@/types/sample";
+import { formatDrawerLabel } from "@/types/sample";
 
 const route = useRoute();
 const router = useRouter();
@@ -67,8 +68,6 @@ const filters = reactive<Record<string, string>>({
   voc: String(route.query.voc ?? ""),
   paintApplication: String(route.query.paintApplication ?? ""),
   coat: String(route.query.coat ?? ""),
-  sampleDate: String(route.query.sampleDate ?? ""),
-  manufacturedAt: String(route.query.manufacturedAt ?? ""),
   expiresAt: String(route.query.expiresAt ?? ""),
   expirationStatus: String(route.query.expirationStatus ?? ""),
   drawerId: String(route.query.drawerId ?? ""),
@@ -111,7 +110,7 @@ const allPageSelected = computed(
 );
 const drawerOptions = computed(() =>
   drawers.value.map((drawer) => ({
-    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number}`,
+    label: formatDrawerLabel(drawer),
     value: drawer.id,
   })),
 );
@@ -151,6 +150,7 @@ const load = async () => {
 
 const applyFilters = async () => {
   page.value = 1;
+  selectedIds.value = [];
   await syncUrl();
   await load();
 };
@@ -164,6 +164,7 @@ const clearFilters = async () => {
 
 const changePage = async (nextPage: number) => {
   page.value = nextPage;
+  selectedIds.value = [];
   await syncUrl();
   await load();
 };
@@ -182,12 +183,28 @@ const openDetail = async (sample: Sample) => {
   }
 };
 
+const formatExpirationStatus = (status?: string) => {
+  switch (status) {
+    case "SEM_VALIDADE":
+      return "Sem validade";
+    case "VALIDA":
+      return "Válida";
+    case "PROXIMA":
+      return "Próxima do vencimento";
+    case "VENCIDA":
+      return "Vencida";
+    default:
+      return status || "—";
+  }
+};
+
 const sampleUpdated = (sample: Sample) => {
   selected.value = sample;
   editing.value = false;
   const index = samples.value.findIndex((item) => item.id === sample.id);
   if (index >= 0) samples.value[index] = sample;
   void getSampleMovements(sample.id).then((items) => (movements.value = items));
+  void load();
 };
 
 const togglePage = () => {
@@ -244,6 +261,9 @@ const confirmExecuteBatch = async () => {
   confirmModalVisible.value = false;
   batchLoading.value = true;
   try {
+    if (selected.value && selectedIds.value.includes(selected.value.id)) {
+      selected.value = null;
+    }
     const result = await runBatch(
       batchAction.value,
       selectedIds.value,
@@ -312,18 +332,24 @@ const filterBySummary = (type: string) => {
   void applyFilters();
 };
 
-const formatDate = (value: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
-        new Date(value),
-      )
-    : "—";
+const formatDate = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const dateObj = new Date(value.includes("T") ? value : `${value}T00:00:00Z`);
+  return isNaN(dateObj.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(dateObj);
+};
 
-const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
+const formatDateTime = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const dateObj = new Date(value);
+  return isNaN(dateObj.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(dateObj);
+};
 
 const getExpirationBadgeText = (sample: Sample) => {
   if (!sample.expiresAt || sample.expirationStatus === "SEM_VALIDADE") {
@@ -799,12 +825,8 @@ onMounted(async () => {
               <dt>Validade</dt>
               <dd>
                 {{ formatDate(selected.expiresAt) }} —
-                {{ selected.expirationStatus }}
+                {{ formatExpirationStatus(selected.expirationStatus) }}
               </dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{{ selected.status }}</dd>
             </div>
           </dl>
           <SampleAddressing

@@ -18,14 +18,6 @@ export class Sample {
   @Column({ type: "varchar", length: 80, unique: true })
   reference!: string;
 
-  /* DESABILITADO: Data da amostra / Fabricação */
-  @Column({ type: "date", name: "sample_date", nullable: true })
-  sampleDate!: string | null;
-
-  /* DESABILITADO: Data da amostra / Fabricação */
-  @Column({ type: "date", name: "manufactured_at", nullable: true })
-  manufacturedAt!: string | null;
-
   @Column({ type: "date", name: "expires_at", nullable: true })
   expiresAt!: string | null;
 

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import type { DataSource } from "typeorm";
 import { z } from "zod";
-import { Drawer } from "../database/entities/Drawer.js";
 import { InventorySetting } from "../database/entities/InventorySetting.js";
 import { authenticate } from "../middleware/authenticate.js";
 import {

@@ -99,8 +99,13 @@ const saveUser = async (user: InventoryAccess) => {
       active: user.active,
     });
     message.value = "Acesso atualizado.";
-  } catch {
-    errorMessage.value = "Não foi possível atualizar o acesso.";
+  } catch (error) {
+    errorMessage.value =
+      error instanceof AxiosError
+        ? (error.response?.data?.message ??
+          "Não foi possível atualizar o acesso.")
+        : "Não foi possível atualizar o acesso.";
+    await loadUsers();
   }
 };
 

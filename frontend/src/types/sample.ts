@@ -1,12 +1,6 @@
 export interface Sample {
   id: string;
   reference: string;
-  /* DESABILITADO: Data da amostra / Fabricação
-  sampleDate: string | null;
-  manufacturedAt: string | null;
-  */
-  sampleDate?: string | null;
-  manufacturedAt?: string | null;
   expiresAt: string | null;
   productBase: string | null;
   supplier: string | null;
@@ -31,12 +25,6 @@ export interface SampleInput {
   reference?: string;
   drawerId?: string;
   addressRecommended?: boolean;
-  /* DESABILITADO: Data da amostra / Fabricação
-  sampleDate?: string;
-  manufacturedAt?: string;
-  */
-  sampleDate?: string;
-  manufacturedAt?: string;
   expiresAt?: string;
   productBase?: string;
   supplier?: string;
@@ -60,6 +48,14 @@ export interface DrawerSummary extends Drawer {
   occupied: number;
   available: number;
 }
+
+export const formatDrawerLabel = (
+  drawer: { type: string; number: number } | null | undefined,
+): string => {
+  if (!drawer) return "—";
+  const typeText = drawer.type === "BASE_AGUA" ? "Base água" : "Solvente";
+  return `${typeText} ${drawer.number}`;
+};
 
 export interface PaginatedSamples {
   items: Sample[];
@@ -89,8 +85,6 @@ export interface SampleFilters {
   voc?: string;
   paintApplication?: string;
   coat?: string;
-  sampleDate?: string;
-  manufacturedAt?: string;
   expiresAt?: string;
   expirationStatus?: string;
   drawerId?: string;

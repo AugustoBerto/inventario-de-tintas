@@ -32,18 +32,35 @@ export const loadInventoryAccess =
       if (
         !access &&
         env.initialAdminRegistration &&
-        String(user.matricula ?? "") === env.initialAdminRegistration &&
-        (await repository.count()) === 0
+        String(user.matricula ?? "") === env.initialAdminRegistration
       ) {
-        access = await repository.save(
-          repository.create({
-            corporateUserId,
-            registration: user.matricula ? String(user.matricula) : null,
-            displayName: user.nome,
-            profile: "ADMIN",
-            active: true,
-          }),
-        );
+        try {
+          const runBootstrap = async (mgr: {
+            getRepository: typeof dataSource.getRepository;
+          }) => {
+            const repo = mgr.getRepository(InventoryAccess);
+            const count = await repo.count();
+            if (count === 0) {
+              access = await repo.save(
+                repo.create({
+                  corporateUserId,
+                  registration: user.matricula ? String(user.matricula) : null,
+                  displayName: user.nome,
+                  profile: "ADMIN",
+                  active: true,
+                }),
+              );
+            }
+          };
+
+          if (typeof dataSource.transaction === "function") {
+            await dataSource.transaction(runBootstrap);
+          } else {
+            await runBootstrap(dataSource);
+          }
+        } catch {
+          access = await repository.findOneBy({ corporateUserId });
+        }
       }
 
       if (!access || !access.active) {

@@ -17,6 +17,7 @@ import {
   recommendedDrawer,
   refreshAddressStatus,
   sampleWithAddress,
+  samplesWithAddresses,
 } from "../services/addressing.js";
 import { recordMovement } from "../services/audit.js";
 import { BatchPreviewCapacity } from "../services/batch-preview.js";
@@ -38,10 +39,6 @@ const optionalVoc = z.preprocess(
 );
 
 const sampleFieldsSchema = z.object({
-  /* DESABILITADO: Data da amostra / Fabricação
-  sampleDate: optionalDate,
-  manufacturedAt: optionalDate,
-  */
   expiresAt: optionalDate,
   productBase: optionalText(120),
   supplier: optionalText(120),
@@ -53,27 +50,7 @@ const sampleFieldsSchema = z.object({
   coat: optionalText(40),
   notes: optionalText(4000),
 });
-const validateDates = (
-  value: { manufacturedAt?: string; expiresAt?: string },
-  context: z.RefinementCtx,
-) => {
-  /* DESABILITADO: Validação fabricação vs validade
-  if (
-    value.manufacturedAt &&
-    value.expiresAt &&
-    value.expiresAt < value.manufacturedAt
-  ) {
-    context.addIssue({
-      code: "custom",
-      path: ["expiresAt"],
-      message: "A validade não pode ser anterior à fabricação.",
-    });
-  }
-  */
-  void value;
-  void context;
-};
-const sampleInputSchema = sampleFieldsSchema.superRefine(validateDates);
+const sampleInputSchema = sampleFieldsSchema;
 
 const createSampleSchema = sampleInputSchema.and(
   z.object({
@@ -87,14 +64,8 @@ const createSampleSchema = sampleInputSchema.and(
     addressRecommended: z.boolean().default(true),
   }),
 );
-const updateSampleSchema = sampleFieldsSchema
-  .partial()
-  .superRefine(validateDates);
+const updateSampleSchema = sampleFieldsSchema.partial();
 const clearableFields = [
-  /* DESABILITADO: Data da amostra / Fabricação
-  "sampleDate",
-  "manufacturedAt",
-  */
   "expiresAt",
   "productBase",
   "supplier",
@@ -268,10 +239,10 @@ export const createSamplesRouter = (dataSource: DataSource) => {
         .setParameter("alertDays", alertDays)
         .getRawOne();
       res.json({
-        items: await Promise.all(
-          items.map((sample) =>
-            sampleWithAddress(dataSource.manager, sample, alertDays),
-          ),
+        items: await samplesWithAddresses(
+          dataSource.manager,
+          items,
+          alertDays,
         ),
         pagination: {
           page,
@@ -336,6 +307,9 @@ export const createSamplesRouter = (dataSource: DataSource) => {
             true,
             req.authUser!,
           );
+          if (result.kind === "full") {
+            throw new Error("DRAWER_FULL");
+          }
           if (result.kind === "ok") return result.sample;
         } else {
           // Caso contrário, tenta endereçamento automático na gaveta recomendada por padrão
@@ -355,7 +329,11 @@ export const createSamplesRouter = (dataSource: DataSource) => {
         return sampleWithAddress(manager, sample);
       });
       res.status(201).json(saved);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === "DRAWER_FULL") {
+        res.status(409).json({ message: "A gaveta selecionada está lotada." });
+        return;
+      }
       if (isDuplicate(error)) {
         res.status(409).json({
           message: "Já existe uma amostra com esta referência.",
@@ -405,24 +383,6 @@ export const createSamplesRouter = (dataSource: DataSource) => {
           }
         }
 
-        /* DESABILITADO: Validação fabricação vs validade no update
-        const manufacturedAt =
-          (values as any).manufacturedAt === undefined
-            ? sample.manufacturedAt
-            : (values as any).manufacturedAt;
-        const expiresAt =
-          values.expiresAt === undefined ? sample.expiresAt : values.expiresAt;
-        if (manufacturedAt && expiresAt && expiresAt < manufacturedAt) {
-          res.status(400).json({
-            message: "Revise os campos informados.",
-            fields: {
-              expiresAt: "A validade não pode ser anterior à fabricação.",
-            },
-          });
-          return;
-        }
-        */
-
         repository.merge(sample, values);
         await repository.save(sample);
         await refreshAddressStatus(dataSource.manager, sample);
@@ -440,148 +400,6 @@ export const createSamplesRouter = (dataSource: DataSource) => {
       }
     },
   );
-
-  router.post(
-    "/:id/address",
-    authorize("ADMIN", "OPERATOR"),
-    async (req, res, next) => {
-      try {
-        const sample = await repository.findOneBy({
-          id: String(req.params.id),
-        });
-        if (!sample) {
-          res.status(404).json({ message: "Amostra não encontrada." });
-          return;
-        }
-        const recommendation = await recommendedDrawer(
-          dataSource.manager,
-          sample,
-        );
-        if (!recommendation) {
-          res.status(422).json({
-            message: "A referência e o VOC não geram uma recomendação.",
-          });
-          return;
-        }
-        const result = await dataSource.transaction((manager) =>
-          moveSample(
-            manager,
-            sample.id,
-            recommendation.id,
-            true,
-            req.authUser!,
-          ),
-        );
-        if (result.kind === "full") {
-          res
-            .status(409)
-            .json({ message: "A gaveta recomendada está lotada." });
-          return;
-        }
-        if (result.kind !== "ok") {
-          res
-            .status(404)
-            .json({ message: "Amostra ou gaveta não encontrada." });
-          return;
-        }
-        res.json(result.sample);
-      } catch (error) {
-        next(error);
-      }
-    },
-  );
-
-  router.post(
-    "/:id/move",
-    authorize("ADMIN", "OPERATOR"),
-    async (req, res, next) => {
-      if (req.params.id === "batch") {
-        next();
-        return;
-      }
-      const parsed = moveSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json(validationError(parsed.error));
-        return;
-      }
-      try {
-        const result = await dataSource.transaction((manager) =>
-          moveSample(
-            manager,
-            String(req.params.id),
-            parsed.data.drawerId,
-            parsed.data.confirmDivergence,
-            req.authUser!,
-            parsed.data.reason,
-          ),
-        );
-        if (result.kind === "full") {
-          res
-            .status(409)
-            .json({ message: "A gaveta selecionada está lotada." });
-          return;
-        }
-        if (result.kind !== "ok") {
-          res
-            .status(404)
-            .json({ message: "Amostra ou gaveta não encontrada." });
-          return;
-        }
-        res.json(result.sample);
-      } catch (error) {
-        next(error);
-      }
-    },
-  );
-
-  router.delete(
-    "/:id/address",
-    authorize("ADMIN", "OPERATOR"),
-    async (req, res, next) => {
-      try {
-        const sample = await dataSource.transaction(async (manager) => {
-          const transactionRepository = manager.getRepository(Sample);
-          const current = await transactionRepository.findOne({
-            where: { id: String(req.params.id) },
-            lock: { mode: "pessimistic_write" },
-          });
-          if (!current) return null;
-          const fromDrawerId = current.drawerId;
-          current.drawerId = null;
-          current.status = "SEM_ENDERECO";
-          current.divergenceReason = null;
-          await transactionRepository.save(current);
-          await recordMovement(manager, req.authUser!, {
-            sampleId: current.id,
-            sampleReference: current.reference,
-            event: "ADDRESS_REMOVED",
-            fromDrawerId,
-          });
-          return current;
-        });
-        if (!sample) {
-          res.status(404).json({ message: "Amostra não encontrada." });
-          return;
-        }
-        res.json(await sampleWithAddress(dataSource.manager, sample));
-      } catch (error) {
-        next(error);
-      }
-    },
-  );
-
-  router.get("/:id/movements", async (req, res, next) => {
-    try {
-      res.json(
-        await dataSource.getRepository(SampleMovement).find({
-          where: { sampleId: String(req.params.id) },
-          order: { createdAt: "DESC" },
-        }),
-      );
-    } catch (error) {
-      next(error);
-    }
-  });
 
   router.post(
     "/batch/move-to-recommended",
@@ -819,6 +637,151 @@ export const createSamplesRouter = (dataSource: DataSource) => {
         results.push({ id, success: true, reason: null });
       }
       res.json({ preview: parsed.data.preview, results });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post(
+    "/:id/address",
+    authorize("ADMIN", "OPERATOR"),
+    async (req, res, next) => {
+      try {
+        const sample = await repository.findOneBy({
+          id: String(req.params.id),
+        });
+        if (!sample) {
+          res.status(404).json({ message: "Amostra não encontrada." });
+          return;
+        }
+        const recommendation = await recommendedDrawer(
+          dataSource.manager,
+          sample,
+        );
+        if (!recommendation) {
+          res.status(422).json({
+            message: "A referência e o VOC não geram uma recomendação.",
+          });
+          return;
+        }
+        const result = await dataSource.transaction((manager) =>
+          moveSample(
+            manager,
+            sample.id,
+            recommendation.id,
+            true,
+            req.authUser!,
+          ),
+        );
+        if (result.kind === "full") {
+          res
+            .status(409)
+            .json({ message: "A gaveta recomendada está lotada." });
+          return;
+        }
+        if (result.kind !== "ok") {
+          res
+            .status(404)
+            .json({ message: "Amostra ou gaveta não encontrada." });
+          return;
+        }
+        res.json(result.sample);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  router.post(
+    "/:id/move",
+    authorize("ADMIN", "OPERATOR"),
+    async (req, res, next) => {
+      const parsed = moveSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json(validationError(parsed.error));
+        return;
+      }
+      try {
+        const result = await dataSource.transaction((manager) =>
+          moveSample(
+            manager,
+            String(req.params.id),
+            parsed.data.drawerId,
+            parsed.data.confirmDivergence,
+            req.authUser!,
+            parsed.data.reason,
+          ),
+        );
+        if (result.kind === "divergent-unconfirmed") {
+          res.status(400).json({
+            message:
+              "É necessário confirmar a movimentação para gaveta divergente.",
+          });
+          return;
+        }
+        if (result.kind === "full") {
+          res
+            .status(409)
+            .json({ message: "A gaveta selecionada está lotada." });
+          return;
+        }
+        if (result.kind !== "ok") {
+          res
+            .status(404)
+            .json({ message: "Amostra ou gaveta não encontrada." });
+          return;
+        }
+        res.json(result.sample);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  router.delete(
+    "/:id/address",
+    authorize("ADMIN", "OPERATOR"),
+    async (req, res, next) => {
+      try {
+        const sample = await dataSource.transaction(async (manager) => {
+          const transactionRepository = manager.getRepository(Sample);
+          const current = await transactionRepository.findOne({
+            where: { id: String(req.params.id) },
+            lock: { mode: "pessimistic_write" },
+          });
+          if (!current) return null;
+          const fromDrawerId = current.drawerId;
+          current.drawerId = null;
+          current.status = "SEM_ENDERECO";
+          current.divergenceReason = null;
+          await transactionRepository.save(current);
+          await recordMovement(manager, req.authUser!, {
+            sampleId: current.id,
+            sampleReference: current.reference,
+            event: "ADDRESS_REMOVED",
+            fromDrawerId,
+          });
+          return current;
+        });
+        if (!sample) {
+          res.status(404).json({ message: "Amostra não encontrada." });
+          return;
+        }
+        res.json(await sampleWithAddress(dataSource.manager, sample));
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
+  router.get("/:id/movements", async (req, res, next) => {
+    try {
+      res.json(
+        await dataSource.getRepository(SampleMovement).find({
+          where: { sampleId: String(req.params.id) },
+          order: { createdAt: "DESC" },
+        }),
+      );
     } catch (error) {
       next(error);
     }

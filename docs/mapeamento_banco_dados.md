@@ -36,8 +36,6 @@ erDiagram
     samples {
         uuid id PK
         varchar reference UK "Única, maiúscula"
-        date sample_date "Desabilitado"
-        date manufactured_at "Desabilitado"
         date expires_at
         varchar product_base
         varchar supplier
@@ -111,8 +109,6 @@ Tabela central contendo os atributos físico-químicos, situação de validade e
 | :--- | :--- | :--- | :--- |
 | `id` | `uuid` | `PRIMARY KEY`, Default `gen_random_uuid()` | Identificador único da amostra. |
 | `reference` | `varchar(80)` | `NOT NULL`, `UNIQUE` | Código de referência único da amostra. |
-| `sample_date` | `date` | `NULLABLE` | Data da amostragem *(desabilitado na UI)*. |
-| `manufactured_at` | `date` | `NULLABLE` | Data de fabricação *(desabilitado na UI)*. |
 | `expires_at` | `date` | `NULLABLE` | Data de validade da tinta. |
 | `product_base` | `varchar(120)` | `NULLABLE` | Base do produto. |
 | `supplier` | `varchar(120)` | `NULLABLE` | Fornecedor da amostra. |

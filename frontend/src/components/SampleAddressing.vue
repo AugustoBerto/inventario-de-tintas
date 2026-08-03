@@ -10,7 +10,11 @@ import {
   moveSample,
   removeSampleAddress,
 } from "@/services/samples";
-import type { DrawerSummary, Sample } from "@/types/sample";
+import {
+  formatDrawerLabel,
+  type DrawerSummary,
+  type Sample,
+} from "@/types/sample";
 
 const props = defineProps<{ sample: Sample }>();
 const emit = defineEmits<{ updated: [sample: Sample] }>();
@@ -21,7 +25,7 @@ const errorMessage = ref("");
 
 const drawerOptions = computed(() =>
   drawers.value.map((drawer) => ({
-    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number} (${drawer.occupied}/${drawer.capacity})`,
+    label: `${formatDrawerLabel(drawer)} (${drawer.occupied}/${drawer.capacity})`,
     value: drawer.id,
     disabled: drawer.available === 0 && drawer.id !== props.sample.drawerId,
   })),
@@ -69,8 +73,7 @@ onMounted(async () => {
       <div>
         <span>Endereço atual</span>
         <strong v-if="sample.drawer">
-          {{ sample.drawer.type === "BASE_AGUA" ? "Base água" : "Solvente" }}
-          {{ sample.drawer.number }}
+          {{ formatDrawerLabel(sample.drawer) }}
           <span v-if="sample.status === 'DIVERGENTE'" class="badge-divergent">
             ⚠️ Divergente
           </span>

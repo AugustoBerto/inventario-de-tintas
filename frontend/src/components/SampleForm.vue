@@ -5,45 +5,42 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { useForm } from "vee-validate";
 import { z } from "zod";
 import Button from "primevue/button";
+import DatePicker from "primevue/datepicker";
 import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import Select from "primevue/select";
 import ToggleSwitch from "primevue/toggleswitch";
 import Textarea from "primevue/textarea";
 import { createSample, listDrawers, updateSample } from "@/services/samples";
-import type { DrawerSummary, Sample, SampleInput } from "@/types/sample";
+import {
+  formatDrawerLabel,
+  type DrawerSummary,
+  type Sample,
+  type SampleInput,
+} from "@/types/sample";
 
 const props = defineProps<{ sample?: Sample | null }>();
 const emit = defineEmits<{ saved: [sample: Sample] }>();
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 const schema = toTypedSchema(
-  z
-    .object({
-      reference: z.string().trim().min(1, "Informe a referência.").max(80),
-      /* DESABILITADO: Data da amostra / Fabricação
-      sampleDate: z.string().optional(),
-      manufacturedAt: z.string().optional(),
-      */
-      expiresAt: z.string().optional(),
-      productBase: optionalText(120),
-      supplier: optionalText(120),
-      color: optionalText(120),
-      substrate: optionalText(120),
-      voc: z.enum(["SOLVENTE", "BASE_AGUA"]).nullable().optional(),
-      paintApplication: optionalText(120),
-      brand: optionalText(120),
-      coat: optionalText(40),
-      notes: optionalText(4000),
-    }),
+  z.object({
+    reference: z.string().trim().min(1, "Informe a referência.").max(80),
+    expiresAt: z.string().optional(),
+    productBase: optionalText(120),
+    supplier: optionalText(120),
+    color: optionalText(120),
+    substrate: optionalText(120),
+    voc: z.enum(["SOLVENTE", "BASE_AGUA"]).nullable().optional(),
+    paintApplication: optionalText(120),
+    brand: optionalText(120),
+    coat: optionalText(40),
+    notes: optionalText(4000),
+  }),
 );
 
 const initialValues = (sample?: Sample | null) => ({
   reference: sample?.reference ?? "",
-  /* DESABILITADO: Data da amostra / Fabricação
-  sampleDate: sample?.sampleDate ?? "",
-  manufacturedAt: sample?.manufacturedAt ?? "",
-  */
   expiresAt: sample?.expiresAt ?? "",
   productBase: sample?.productBase ?? "",
   supplier: sample?.supplier ?? "",
@@ -85,6 +82,24 @@ const [brand] = defineField("brand");
 const [coat] = defineField("coat");
 const [notes] = defineField("notes");
 
+const expiresAtDate = computed<Date | null>({
+  get() {
+    if (!expiresAt.value) return null;
+    const [year, month, day] = expiresAt.value.split("-").map(Number);
+    return year && month && day ? new Date(year, month - 1, day) : null;
+  },
+  set(val: Date | null) {
+    if (!val || isNaN(val.getTime())) {
+      expiresAt.value = "";
+      return;
+    }
+    const year = val.getFullYear();
+    const month = String(val.getMonth() + 1).padStart(2, "0");
+    const day = String(val.getDate()).padStart(2, "0");
+    expiresAt.value = `${year}-${month}-${day}`;
+  },
+});
+
 const editing = computed(() => Boolean(props.sample));
 const keepValues = ref(false);
 const drawers = ref<DrawerSummary[]>([]);
@@ -98,7 +113,7 @@ const vocOptions = [
 const drawerOptions = computed(() => [
   { label: "Endereçamento automático (Gaveta recomendada)", value: "" },
   ...drawers.value.map((drawer) => ({
-    label: `${drawer.type === "BASE_AGUA" ? "Base água" : "Solvente"} ${drawer.number} (${drawer.occupied}/${drawer.capacity})`,
+    label: `${formatDrawerLabel(drawer)} (${drawer.occupied}/${drawer.capacity})`,
     value: drawer.id,
     disabled: drawer.available === 0,
   })),
@@ -117,8 +132,11 @@ watch(
   (sample) => resetForm({ values: initialValues(sample) }),
 );
 
+const globalError = ref("");
+
 const submit = handleSubmit(async (values) => {
   setErrors({});
+  globalError.value = "";
   try {
     const payload: SampleInput = {
       ...values,
@@ -143,14 +161,14 @@ const submit = handleSubmit(async (values) => {
     const response = (
       error as AxiosError<{ message?: string; fields?: Record<string, string> }>
     ).response?.data;
+    let hasFieldErrors = false;
     for (const [field, message] of Object.entries(response?.fields ?? {})) {
       setFieldError(field as keyof typeof values, message);
+      hasFieldErrors = true;
     }
-    if (!response?.fields) {
-      setFieldError(
-        "reference",
-        response?.message ?? "Não foi possível salvar a amostra.",
-      );
+    if (!hasFieldErrors) {
+      globalError.value =
+        response?.message ?? "Não foi possível salvar a amostra.";
     }
   }
 });
@@ -158,6 +176,10 @@ const submit = handleSubmit(async (values) => {
 
 <template>
   <form class="sample-form" @submit="submit">
+    <Message v-if="globalError" severity="error" :closable="true" @close="globalError = ''">
+      {{ globalError }}
+    </Message>
+
     <Message v-if="editing" severity="info" :closable="false">
       A referência é imutável após o cadastro.
     </Message>
@@ -174,22 +196,15 @@ const submit = handleSubmit(async (values) => {
       <small class="field-error">{{ errors.reference }}</small>
     </div>
 
-    <!-- DESABILITADO: Data da amostra e Fabricação
-    <div class="form-field">
-      <label for="sample-date">Data da amostra</label>
-      <InputText id="sample-date" v-model="sampleDate" type="date" />
-    </div>
-    <div class="form-field">
-      <label for="manufactured-at">Fabricação</label>
-      <InputText id="manufactured-at" v-model="manufacturedAt" type="date" />
-    </div>
-    -->
     <div class="form-field">
       <label for="expires-at">Validade</label>
-      <InputText
+      <DatePicker
         id="expires-at"
-        v-model="expiresAt"
-        type="date"
+        v-model="expiresAtDate"
+        dateFormat="dd/mm/yy"
+        showIcon
+        showButtonBar
+        placeholder="dd/mm/aaaa"
         :invalid="Boolean(errors.expiresAt)"
       />
       <small class="field-error">{{ errors.expiresAt }}</small>

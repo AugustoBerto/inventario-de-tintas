@@ -2,7 +2,7 @@
 import { onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import Button from "primevue/button";
-import type { Sample } from "@/types/sample";
+import { formatDrawerLabel, type Sample } from "@/types/sample";
 
 const props = defineProps<{
   sample: Sample | null;
@@ -93,7 +93,7 @@ onUnmounted(() => {
           <div v-if="sample.drawer" class="meta-item">
             <span class="meta-label">Endereço</span>
             <strong class="meta-value">
-              📍 {{ sample.drawer.type === 'BASE_AGUA' ? 'Base água' : 'Solvente' }} {{ sample.drawer.number }}
+              📍 {{ formatDrawerLabel(sample.drawer) }}
             </strong>
           </div>
           <div v-else class="meta-item">
