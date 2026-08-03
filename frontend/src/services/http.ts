@@ -46,8 +46,15 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    config._retriedAfterRefresh = true;
-    await refreshSession();
-    return http.request(config);
+    try {
+      config._retriedAfterRefresh = true;
+      await refreshSession();
+      return await http.request(config);
+    } catch (refreshError) {
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      }
+      return Promise.reject(refreshError);
+    }
   },
 );

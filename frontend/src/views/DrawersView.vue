@@ -89,6 +89,14 @@ const saveDrawerCapacity = async () => {
   }
 };
 
+const formatDate = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const dateObj = new Date(value.includes("T") ? value : `${value}T00:00:00Z`);
+  return isNaN(dateObj.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(dateObj);
+};
+
 onMounted(load);
 onMounted(async () => {
   try {
@@ -308,16 +316,13 @@ onMounted(async () => {
                     >
                       <strong>{{ sample.reference }}</strong>
                     </RouterLink>
-                    <span class="sample-status-badge">
-                      {{ sample.status }}
-                    </span>
                   </div>
 
                   <div class="sample-item-details">
                     <span v-if="sample.color">🎨 {{ sample.color }}</span>
                     <span v-if="sample.supplier">🏭 {{ sample.supplier }}</span>
                     <span v-if="sample.brand">🏷️ {{ sample.brand }}</span>
-                    <span v-if="sample.expiresAt">📅 Validade: {{ sample.expiresAt }}</span>
+                    <span v-if="sample.expiresAt">📅 Validade: {{ formatDate(sample.expiresAt) }}</span>
                   </div>
                 </article>
               </div>

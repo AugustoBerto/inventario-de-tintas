@@ -57,8 +57,7 @@ router.beforeEach(async (to) => {
   const profiles = to.meta.profiles as string[] | undefined;
   if (
     profiles &&
-    session.access &&
-    !profiles.includes(session.access.profile)
+    (!session.access || !profiles.includes(session.access.profile))
   ) {
     return { name: "inventory" };
   }
