@@ -295,7 +295,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
         await recordMovement(manager, req.authUser!, {
           sampleId: sample.id,
           sampleReference: sample.reference,
-          event: "CREATED",
+          event: "CRIADO",
         });
 
         // Se uma gaveta foi selecionada explicitamente no cadastro, endereça nela
@@ -390,7 +390,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
           await recordMovement(dataSource.manager, req.authUser!, {
             sampleId: sample.id,
             sampleReference: sample.reference,
-            event: "VOC_CHANGED",
+            event: "VOC_MODIFICADO",
             details: { from: previousVoc, to: sample.voc },
           });
         }
@@ -589,7 +589,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
               await recordMovement(manager, req.authUser!, {
                 sampleId: id,
                 sampleReference: current.reference,
-                event: "ADDRESS_REMOVED",
+                event: "REMOVIDO_ENDERECO",
                 fromDrawerId,
                 details: { batch: true },
               });
@@ -627,7 +627,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
             await recordMovement(manager, req.authUser!, {
               sampleId: sample.id,
               sampleReference: sample.reference,
-              event: "DELETED",
+              event: "DELETADO",
               fromDrawerId: sample.drawerId,
               details: { batch: true },
             });
@@ -758,7 +758,7 @@ export const createSamplesRouter = (dataSource: DataSource) => {
           await recordMovement(manager, req.authUser!, {
             sampleId: current.id,
             sampleReference: current.reference,
-            event: "ADDRESS_REMOVED",
+            event: "REMOVIDO_ENDERECO",
             fromDrawerId,
           });
           return current;

@@ -217,7 +217,7 @@ export const moveSample = async (
   await recordMovement(manager, actor, {
     sampleId: sample.id,
     sampleReference: sample.reference,
-    event: fromDrawerId ? "MOVED" : "ADDRESSED",
+    event: fromDrawerId ? "MOVIDO" : "ENDERECADO",
     fromDrawerId,
     toDrawerId: drawerId,
     details: divergent
