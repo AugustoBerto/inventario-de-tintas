@@ -31,6 +31,92 @@ export const recommendedDrawer = async (
   return drawer ? drawerSummary(manager, drawer) : null;
 };
 
+export const samplesWithAddresses = async (
+  manager: EntityManager,
+  samples: Sample[],
+  expirationAlertDays?: number,
+) => {
+  const alertDays =
+    expirationAlertDays ??
+    Number(
+      (
+        await manager
+          .getRepository(InventorySetting)
+          .findOneBy({ key: "expirationAlertDays" })
+      )?.value ?? 30,
+    );
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const alertDate = new Date(today);
+  alertDate.setUTCDate(alertDate.getUTCDate() + alertDays);
+  const todayStr = today.toISOString().slice(0, 10);
+  const alertDateStr = alertDate.toISOString().slice(0, 10);
+
+  const drawers = await manager.getRepository(Drawer).find();
+  const drawerMap = new Map<string, Drawer>();
+  const drawerByKey = new Map<string, Drawer>();
+  for (const d of drawers) {
+    drawerMap.set(d.id, d);
+    drawerByKey.set(`${d.type}_${d.number}`, d);
+  }
+
+  const rawCounts: { drawer_id: string; count: string }[] = await manager
+    .getRepository(Sample)
+    .createQueryBuilder("sample")
+    .select("sample.drawer_id", "drawer_id")
+    .addSelect("COUNT(sample.id)", "count")
+    .where("sample.drawer_id IS NOT NULL")
+    .groupBy("sample.drawer_id")
+    .getRawMany();
+
+  const occupiedMap = new Map<string, number>();
+  for (const row of rawCounts) {
+    if (row.drawer_id) {
+      occupiedMap.set(row.drawer_id, Number(row.count));
+    }
+  }
+
+  const getDrawerSummary = (drawer: Drawer) => {
+    const occupied = occupiedMap.get(drawer.id) ?? 0;
+    return {
+      ...drawer,
+      occupied,
+      available: Math.max(0, drawer.capacity - occupied),
+    };
+  };
+
+  return samples.map((sample) => {
+    const expirationStatus = !sample.expiresAt
+      ? "SEM_VALIDADE"
+      : sample.expiresAt < todayStr
+        ? "VENCIDA"
+        : sample.expiresAt <= alertDateStr
+          ? "PROXIMA"
+          : "VALIDA";
+
+    const drawer = sample.drawerId ? drawerMap.get(sample.drawerId) ?? null : null;
+
+    let recommendation = null;
+    if (sample.voc === "SOLVENTE" || sample.voc === "BASE_AGUA") {
+      const match = sample.reference.match(/(\d)$/);
+      if (match) {
+        const key = `${sample.voc}_${Number(match[1])}`;
+        const recDrawer = drawerByKey.get(key);
+        if (recDrawer) {
+          recommendation = getDrawerSummary(recDrawer);
+        }
+      }
+    }
+
+    return {
+      ...sample,
+      drawer,
+      recommendation,
+      expirationStatus,
+    };
+  });
+};
+
 export const sampleWithAddress = async (
   manager: EntityManager,
   sample: Sample,
@@ -115,6 +201,9 @@ export const moveSample = async (
 
   const recommendation = await recommendedDrawer(manager, sample);
   const divergent = Boolean(recommendation && recommendation.id !== drawerId);
+  if (divergent && !confirmDivergence) {
+    return { kind: "divergent-unconfirmed" as const };
+  }
 
   const fromDrawerId = sample.drawerId;
   sample.drawerId = drawerId;
