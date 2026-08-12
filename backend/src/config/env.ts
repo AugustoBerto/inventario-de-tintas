@@ -24,6 +24,7 @@ const schema = z.object({
   DATABASE_PASSWORD: z.string().min(1, "DATABASE_PASSWORD é obrigatório"),
   DATABASE_NAME: z.string().default("postgres"),
   DATABASE_SSL: booleanFromString,
+  CORS_ORIGIN: z.string().url().default("http://localhost"),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -52,4 +53,5 @@ export const env = {
     database: values.DATABASE_NAME,
     ssl: values.DATABASE_SSL,
   },
+  corsOrigin: values.CORS_ORIGIN,
 };

@@ -1,7 +1,9 @@
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import { pinoHttp } from "pino-http";
 import type { DataSource } from "typeorm";
+import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { createDrawersRouter } from "./routes/drawers.js";
@@ -15,6 +17,12 @@ export const createApp = (dataSource: DataSource) => {
   const app = express();
 
   app.disable("x-powered-by");
+  app.use(
+    cors({
+      origin: env.corsOrigin,
+      credentials: true,
+    }),
+  );
   app.use(pinoHttp({ logger }));
   app.use(cookieParser());
   app.use(express.json());
