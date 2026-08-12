@@ -1,0 +1,10 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /amostras_tintas/
+
+# Não redireciona arquivos ou diretórios existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redireciona tudo para index.html (SPA fallback)
+RewriteRule ^ index.html [L]
