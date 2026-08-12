@@ -8,8 +8,18 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   _retriedAfterRefresh?: boolean;
 }
 
+const gatewayBase = import.meta.env.VITE_GATEWAY_BASE_URL || "http://localhost:2399/api";
+
+// Cliente para rotas de autenticação (MAIN_SERVICE via gateway)
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_GATEWAY_BASE_URL || "http://localhost:2399/api",
+  baseURL: gatewayBase,
+  withCredentials: true,
+  timeout: 10_000,
+});
+
+// Cliente para rotas do inventory (AMOSTRAS_TINTAS via gateway)
+export const inventoryHttp = axios.create({
+  baseURL: `${gatewayBase}/amostras-tintas`,
   withCredentials: true,
   timeout: 10_000,
 });
@@ -33,15 +43,18 @@ const refreshSession = () => {
 
 http.interceptors.response.use(
   (response) => response,
+  (error: AxiosError) => Promise.reject(error),
+);
+
+inventoryHttp.interceptors.response.use(
+  (response) => response,
   async (error: AxiosError) => {
     const config = error.config as RetryConfig | undefined;
-    const isAuthRequest = config?.url?.startsWith("/auth/");
 
     if (
       error.response?.status !== 401 ||
       !config ||
-      config._retriedAfterRefresh ||
-      isAuthRequest
+      config._retriedAfterRefresh
     ) {
       return Promise.reject(error);
     }
@@ -49,12 +62,15 @@ http.interceptors.response.use(
     try {
       config._retriedAfterRefresh = true;
       await refreshSession();
-      return await http.request(config);
+      return await inventoryHttp.request(config);
     } catch (refreshError) {
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      const publicBase = import.meta.env.VITE_PUBLIC_BASE || "/";
+      const loginPath = `${publicBase}login`.replace("//", "/");
+      if (typeof window !== "undefined" && window.location.pathname !== loginPath) {
+        window.location.href = `${loginPath}?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
       }
       return Promise.reject(refreshError);
     }
   },
 );
+

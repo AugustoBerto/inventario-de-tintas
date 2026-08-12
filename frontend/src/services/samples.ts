@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { inventoryHttp } from "./http";
 import type {
   DrawerSummary,
   PaginatedSamples,
@@ -10,28 +10,28 @@ import type {
 
 export const listSamples = async (params: SampleFilters) =>
   (
-    await http.get<PaginatedSamples>("/inventory/samples", {
+    await inventoryHttp.get<PaginatedSamples>("/samples", {
       params,
     })
   ).data;
 
 export const getSample = async (id: string) =>
-  (await http.get<Sample>(`/inventory/samples/${id}`)).data;
+  (await inventoryHttp.get<Sample>(`/samples/${id}`)).data;
 
 export const createSample = async (values: SampleInput) =>
-  (await http.post<Sample>("/inventory/samples", values)).data;
+  (await inventoryHttp.post<Sample>("/samples", values)).data;
 
 export const updateSample = async (id: string, values: SampleInput) =>
-  (await http.patch<Sample>(`/inventory/samples/${id}`, values)).data;
+  (await inventoryHttp.patch<Sample>(`/samples/${id}`, values)).data;
 
 export const listDrawers = async () =>
-  (await http.get<DrawerSummary[]>("/inventory/drawers")).data;
+  (await inventoryHttp.get<DrawerSummary[]>("/drawers")).data;
 
 export const updateDrawerCapacity = async (id: string, capacity: number) =>
-  (await http.patch<DrawerSummary>(`/inventory/drawers/${id}`, { capacity })).data;
+  (await inventoryHttp.patch<DrawerSummary>(`/drawers/${id}`, { capacity })).data;
 
 export const addressSample = async (id: string) =>
-  (await http.post<Sample>(`/inventory/samples/${id}/address`)).data;
+  (await inventoryHttp.post<Sample>(`/samples/${id}/address`)).data;
 
 export const moveSample = async (
   id: string,
@@ -40,7 +40,7 @@ export const moveSample = async (
   reason?: string,
 ) =>
   (
-    await http.post<Sample>(`/inventory/samples/${id}/move`, {
+    await inventoryHttp.post<Sample>(`/samples/${id}/move`, {
       drawerId,
       confirmDivergence,
       reason,
@@ -48,10 +48,10 @@ export const moveSample = async (
   ).data;
 
 export const removeSampleAddress = async (id: string) =>
-  (await http.delete<Sample>(`/inventory/samples/${id}/address`)).data;
+  (await inventoryHttp.delete<Sample>(`/samples/${id}/address`)).data;
 
 export const getSampleMovements = async (id: string) =>
-  (await http.get<SampleMovement[]>(`/inventory/samples/${id}/movements`)).data;
+  (await inventoryHttp.get<SampleMovement[]>(`/samples/${id}/movements`)).data;
 
 export type BatchAction =
   "move" | "move-to-recommended" | "remove-address" | "delete";
@@ -69,9 +69,9 @@ export const runBatch = async (
 ) => {
   const config = { data: { ids, preview, drawerId } };
   return action === "delete"
-    ? (await http.delete<BatchResult>("/inventory/samples/batch", config)).data
+    ? (await inventoryHttp.delete<BatchResult>("/samples/batch", config)).data
     : (
-        await http.post<BatchResult>(`/inventory/samples/batch/${action}`, {
+        await inventoryHttp.post<BatchResult>(`/samples/batch/${action}`, {
           ids,
           preview,
           drawerId,

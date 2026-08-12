@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { AxiosError } from "axios";
-import { http } from "@/services/http";
+import { http, inventoryHttp } from "@/services/http";
 import type { AuthResponse, AuthUser } from "@/types/auth";
 import type { InventoryAccess } from "@/types/sample";
 
@@ -26,8 +26,8 @@ export const useSessionStore = defineStore("session", () => {
 
   const loadInventoryAccess = async () => {
     try {
-      const { data } = await http.get<{ access: InventoryAccess }>(
-        "/inventory/session",
+      const { data } = await inventoryHttp.get<{ access: InventoryAccess }>(
+        "/session",
       );
       access.value = data.access;
       accessDenied.value = false;
