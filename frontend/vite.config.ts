@@ -5,9 +5,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const publicBase = env.VITE_PUBLIC_BASE?.trim() || "/amostras_tintas/";
 
   return {
-    base: "./",
+    base: publicBase,
     plugins: [vue()],
     resolve: {
       alias: {
