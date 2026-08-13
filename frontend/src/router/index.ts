@@ -4,7 +4,7 @@ import AppLayout from "@/layouts/AppLayout.vue";
 import LoginView from "@/views/LoginView.vue";
 
 export const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_PUBLIC_BASE || "/"),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/login",
